@@ -1,58 +1,74 @@
-# VPS-Vorbereitung E2E-Testergebnisse
+# Tailscale E2E-Testergebnisse
 
 ## Übersicht
+- **Durchgeführte Tests:** 6
+- **Erfolgreiche Tests:** 5
+- **Fehlgeschlagene Tests:** 1
 
-Datum: 2026-04-08 05:52:33
-Server: ubuntu.tailcfea8a.ts.net
+## Testdetails
 
-## Fehler und Warnungen
+### 1. Installation (ERFOLGREICH)
+- ✅ Tailscale-Befehl ist verfügbar
+- ✅ Tailscale-Dienst ist installiert und läuft
+- ✅ Tailscale-Dienst ist für den Systemstart aktiviert
+- ✅ Tailscale-Version: 1.96.4
+- ✅ Konfigurationsverzeichnis und Statusdatei existieren
 
-### Festgestellte Fehler
+### 2. Connection (FEHLGESCHLAGEN)
+- ❌ **FEHLER:** Tailscale ist nicht mit dem Netzwerk verbunden
+- Dies ist das kritischste Problem und muss als erstes behoben werden
 
-1. **Fail2Ban-Konfiguration**: Die benutzerdefinierte Konfigurationsdatei /etc/fail2ban/jail.local existiert nicht.
-2. **Kernel-Sicherheitseinstellungen**: 
-   - net.ipv4.conf.all.rp_filter = 2 (sollte 1 sein)
-   - net.ipv4.conf.default.rp_filter = 2 (sollte 1 sein)
-3. **Logging und Audit**:
-   - auditd Dienst ist nicht aktiv
-   - /etc/audit/rules.d/audit.rules existiert nicht
+### 3. ACL (ERFOLGREICH)
+- ✅ ACL-Konfigurationsverzeichnis existiert
+- ✅ Standard-ACL-Konfigurationsdatei existiert mit gültigem JSON
+- ✅ UFW ist aktiviert mit korrekten Tailscale-Regeln
+- ✅ Tailscale UDP-Port (41641) ist in der Firewall freigegeben
 
-### Bestandene Tests
+### 4. DNS (ERFOLGREICH mit Warnungen)
+- ⚠️ **WARNUNG:** MagicDNS ist nicht aktiviert
+- ⚠️ **WARNUNG:** Lokale DNS-Konfigurationsdatei existiert nicht
+- ⚠️ **WARNUNG:** Hostname konnte nicht über Tailscale DNS aufgelöst werden
+- ⚠️ **WARNUNG:** Benutzerdefinierte Domains konnten nicht aufgelöst werden
+- ✅ Externe Domain (example.com) wurde erfolgreich aufgelöst
 
-1. **Systemupdates**: Das System ist auf dem neuesten Stand.
-2. **Paketinstallation**: Alle erforderlichen Pakete sind installiert.
-3. **Firewall**: Die Firewall ist aktiv und korrekt konfiguriert.
-4. **SSH-Sicherheitseinstellungen**: Alle notwendigen SSH-Sicherheitskonfigurationen sind korrekt.
-5. **Automatische Updates**: Die Konfigurationsdatei existiert.
-6. **Vorbereitung-Logdatei**: Die Logdatei existiert.
+### 5. Logging (ERFOLGREICH mit Warnungen)
+- ⚠️ **WARNUNG:** Tailscale-Monitoring-Verzeichnis existiert nicht
+- ⚠️ **WARNUNG:** Tailscale-Monitoring-Cron-Konfiguration existiert nicht
+- ⚠️ **WARNUNG:** Tailscale-Log-Rotation-Konfiguration existiert nicht
+- ⚠️ In den Logs erscheint wiederholt: `dns: resolver: forward: no upstream resolvers set, returning SERVFAIL`
 
-## Gesamtbewertung
+### 6. Backup (ERFOLGREICH mit Warnungen)
+- ⚠️ **WARNUNG:** Tailscale-Backup-Verzeichnis existiert nicht
+- ⚠️ **WARNUNG:** Tailscale-Backup-Skript existiert nicht
+- ⚠️ **WARNUNG:** Tailscale-Wiederherstellungsskript existiert nicht
+- ⚠️ **WARNUNG:** Tailscale-Backup-Cron-Konfiguration existiert nicht
 
-Die VPS-Vorbereitung wird als **teilweise erfolgreich** bewertet. Von 9 überprüften Bereichen sind 6 Tests erfolgreich und 3 Tests fehlgeschlagen. 
+## Zusammenfassung der Probleme
 
-**Stärken:**
-- Grundlegende Sicherheitsmaßnahmen sind korrekt implementiert (Firewall, SSH-Absicherung)
-- Das System ist aktuell und automatische Updates sind konfiguriert
-- Alle erforderlichen Pakete sind installiert
+### Kritische Probleme:
+1. **Verbindungsproblem:** Tailscale ist nicht mit dem Netzwerk verbunden, obwohl der Dienst läuft. Dies deutet auf ein Problem bei der Authentifizierung oder Konfiguration hin.
 
-**Schwächen:**
-- Fehlendes Auditing und erweiterte Protokollierung
-- Fail2Ban läuft, hat aber keine benutzerdefinierte Konfiguration
-- Kernel-Sicherheitsparameter sind weniger restriktiv als empfohlen
+### Wichtige Probleme:
+1. **DNS-Probleme:** 
+   - MagicDNS ist nicht aktiviert
+   - DNS-Auflösung für interne Hostnamen funktioniert nicht
+   - DNS-Resolver meldet "no upstream resolvers set" (fehlende DNS-Server-Konfiguration)
 
-### Empfehlungen
+### Zu verbessernde Konfigurationen:
+1. **Monitoring:** Es fehlt die komplette Monitoring-Infrastruktur
+2. **Backup:** Es fehlt die komplette Backup-Konfiguration für Tailscale
 
-1. **Hohe Priorität:**
-   - Auditing-System aktivieren: `apt install auditd && systemctl enable auditd && systemctl start auditd`
-   - Grundlegende Audit-Regeln erstellen: `/etc/audit/rules.d/audit.rules`
+## Empfehlungen
 
-2. **Mittlere Priorität:**
-   - Kernel-Parameter anpassen: `sysctl -w net.ipv4.conf.all.rp_filter=1 && sysctl -w net.ipv4.conf.default.rp_filter=1`
-   - Permanente Änderung in `/etc/sysctl.conf` vornehmen
+1. **Sofortige Maßnahmen:**
+   - Tailscale-Verbindung wiederherstellen mit `tailscale up` und korrekter Authentifizierung
+   - DNS-Konfiguration prüfen und upstream resolver konfigurieren
 
-3. **Normale Priorität:**
-   - Fail2Ban-Konfiguration anpassen: `/etc/fail2ban/jail.local` erstellen mit benutzerdefinierten Einstellungen
+2. **Mittelfristige Maßnahmen:**
+   - MagicDNS aktivieren für einfachere Namensauflösung
+   - Monitoring-Infrastruktur einrichten
+   - Backup-Strategie implementieren
 
-### Fazit
-
-Der VPS ist für die grundlegende Nutzung ausreichend vorbereitet und erfüllt die wichtigsten Sicherheitsanforderungen. Für einen produktiven Einsatz, insbesondere mit sensiblen Daten, sollten die identifizierten Mängel jedoch behoben werden.
+3. **Langfristige Maßnahmen:**
+   - Automatisierte regelmäßige Tests einrichten
+   - Dokumentation der Tailscale-Konfiguration erstellen oder aktualisieren

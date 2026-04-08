@@ -27,12 +27,21 @@ Im Projekt werden folgende Status für Aufgaben verwendet:
 
 ### 2. Infrastruktur-Setup
 
-- [plan] [2026-04-07] VPS-Provider auswählen und Server provisionieren
-- [plan] [2026-04-07] Grundlegende Ubuntu-Konfiguration vornehmen
-- [plan] [2026-04-07] Firewall-Regeln festlegen und implementieren
+- [fertig] [2026-04-07] VPS-Provider auswählen und Server provisionieren
+- [fertig] [2026-04-08] Grundlegende Ubuntu-Konfiguration vornehmen
+- [fertig] [2026-04-08] Firewall-Regeln festlegen und implementieren
 - [plan] [2026-04-07] Monitoring-Lösung einrichten
 - [plan] [2026-04-07] Backup-Strategie entwickeln und implementieren
-- [plan] [2026-04-07] SSH-Schlüssel und Zugriffsverwaltung konfigurieren
+- [fertig] [2026-04-08] SSH-Schlüssel und Zugriffsverwaltung konfigurieren
+
+#### 2.1 VPS-Vorbereitung
+
+- [fertig] [2026-04-08] Initiales VPS-Vorbereitungsskript erstellen (prepare-vps.sh)
+- [fertig] [2026-04-08] E2E-Tests für VPS-Vorbereitung entwickeln (test-vps-preparation.sh)
+- [fertig] [2026-04-08] Probleme bei der VPS-Vorbereitung identifizieren
+- [fertig] [2026-04-08] Korrekturskript erstellen (fix-vps-preparation.sh)
+- [fertig] [2026-04-08] Korrekturskript auf dem VPS ausführen
+- [fertig] [2026-04-08] Ergebnisse dokumentieren (plans/vps-korrekturen-ergebnisse.md)
 
 ### 3. Komponenten-Konfiguration
 
@@ -59,3 +68,6 @@ Im Projekt werden folgende Status für Aufgaben verwendet:
 - [plan] [2026-04-07] Multi-User-Konzept entwickeln
 - [plan] [2026-04-07] Kosten- und Skalierungsmodell definieren
 - [plan] [2026-04-07] Disaster-Recovery-Plan erstellen
+
+
+## Backlog / Zukünftige Ausbaustufen
