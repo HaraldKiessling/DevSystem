@@ -2,72 +2,86 @@
 
 ## Projektzweck
 
-Dieses Projekt zielt auf den Aufbau einer cloudbasierten Entwicklungsumgebung auf einem Ubuntu VPS mit Tailscale (VPN), Caddy (Reverse Proxy) und code-server (Web-IDE). Das System ermöglicht eine sichere, skalierbare und von überall zugängliche Entwicklungsumgebung für verteilte Teams.
+Aufbau eines reproduzierbaren, cloudbasierten Entwicklungssystems auf einem IONOS Ubuntu VPS mit Tailscale (VPN), Caddy (Reverse Proxy) und code-server (Web-IDE). Das System muss vollständig per Handy-Browser (PWA) über code-server steuerbar sein.
 
-## Aufgabenstatus
+## Aktive Aufgaben (MVP)
 
-Im Projekt werden folgende Status für Aufgaben verwendet:
+### Caddy-Implementierung
 
-- **plan**: Aufgabe ist identifiziert, aber noch nicht begonnen
-- **Konzeption**: Aufgabe befindet sich in der Planungs- und Entwurfsphase
-- **Entwicklung**: Aktive Implementierung der Aufgabe
-- **qs**: Qualitätssicherung und interne Tests
-- **e2e**: End-to-End Tests und Integrationsvalidierung
-- **fertig**: Aufgabe vollständig abgeschlossen und abgenommen
+- [Branch Open] Feature-Branch für Caddy erstellt (feature/caddy-setup)
+- [Branch Open] Caddy-Installationsskript entwickelt (install-caddy.sh)
+- [Todo] Caddy-Konfigurationsskript entwickeln
+- [Todo] E2E-Tests für Caddy entwickeln
+- [Todo] Caddy-Skripte auf dem VPS ausführen
+- [Todo] E2E-Tests für Caddy durchführen
 
-## MVP Aufgabenliste
+### code-server-Implementierung
 
-### 1. Projektinitialisierung
+- [Todo] Feature-Branch für code-server erstellen
+- [Todo] code-server-Installationsskript entwickeln
+- [Todo] code-server-Konfigurationsskript entwickeln
+- [Todo] E2E-Tests für code-server entwickeln
+- [Todo] code-server-Skripte auf dem VPS ausführen
+- [Todo] E2E-Tests für code-server durchführen
 
-- [plan] [2026-04-07] Projekt-Repository erstellen
-- [plan] [2026-04-07] Initiale Dokumentation aufsetzen
-- [plan] [2026-04-07] Projektmeilensteine definieren
-- [plan] [2026-04-07] Team-Rollen und Verantwortlichkeiten festlegen
-- [plan] [2026-04-07] Kickoff-Meeting organisieren
+## Abgeschlossene Aufgaben (MVP)
 
-### 2. Infrastruktur-Setup
+### VPS-Vorbereitung
 
-- [fertig] [2026-04-07] VPS-Provider auswählen und Server provisionieren
-- [fertig] [2026-04-08] Grundlegende Ubuntu-Konfiguration vornehmen
-- [fertig] [2026-04-08] Firewall-Regeln festlegen und implementieren
-- [plan] [2026-04-07] Monitoring-Lösung einrichten
-- [plan] [2026-04-07] Backup-Strategie entwickeln und implementieren
-- [fertig] [2026-04-08] SSH-Schlüssel und Zugriffsverwaltung konfigurieren
+- [Merged] VPS-Vorbereitungsskript erstellt (prepare-vps.sh)
+- [Merged] E2E-Tests für VPS-Vorbereitung entwickelt (test-vps-preparation.sh)
+- [Merged] Probleme bei der VPS-Vorbereitung identifiziert
+- [Merged] Korrekturskript erstellt (fix-vps-preparation.sh)
+- [Merged] Korrekturskript auf dem VPS ausgeführt
+- [Merged] Ergebnisse dokumentiert (plans/vps-korrekturen-ergebnisse.md)
 
-#### 2.1 VPS-Vorbereitung
+### Tailscale-Implementierung
 
-- [fertig] [2026-04-08] Initiales VPS-Vorbereitungsskript erstellen (prepare-vps.sh)
-- [fertig] [2026-04-08] E2E-Tests für VPS-Vorbereitung entwickeln (test-vps-preparation.sh)
-- [fertig] [2026-04-08] Probleme bei der VPS-Vorbereitung identifizieren
-- [fertig] [2026-04-08] Korrekturskript erstellen (fix-vps-preparation.sh)
-- [fertig] [2026-04-08] Korrekturskript auf dem VPS ausführen
-- [fertig] [2026-04-08] Ergebnisse dokumentieren (plans/vps-korrekturen-ergebnisse.md)
+- [Merged] Feature-Branch für Tailscale erstellt (feature/tailscale-setup)
+- [Merged] Tailscale-Installationsskript entwickelt (install-tailscale.sh)
+- [Merged] Tailscale-Konfigurationsskript entwickelt (configure-tailscale.sh)
+- [Merged] E2E-Tests für Tailscale entwickelt (test-tailscale.sh)
+- [Merged] Tailscale-Skripte auf dem VPS ausgeführt
+- [Merged] E2E-Tests für Tailscale durchgeführt
+- [Merged] Probleme mit Tailscale behoben
 
-### 3. Komponenten-Konfiguration
+## Offene Entscheidungen
 
-- [plan] [2026-04-07] Tailscale VPN installieren und konfigurieren
-- [plan] [2026-04-07] Caddy als Reverse Proxy einrichten
-- [plan] [2026-04-07] SSL/TLS-Zertifikate konfigurieren
-- [plan] [2026-04-07] code-server installieren und anpassen
-- [plan] [2026-04-07] Docker/Containerumgebung einrichten
-- [plan] [2026-04-07] Entwicklungstools und Dependencies installieren
-- [plan] [2026-04-07] Authentifizierungssystem implementieren
-
-### 4. Testkonzept
-
-- [plan] [2026-04-07] Testplan für Komponenten erstellen
-- [plan] [2026-04-07] Integrationstests definieren
-- [plan] [2026-04-07] Lasttests konzipieren und implementieren
-- [plan] [2026-04-07] Security-Audit durchführen
-- [plan] [2026-04-07] Dokumentation der Testfälle erstellen
-
-### 5. Offene Entscheidungen
-
-- [plan] [2026-04-07] CI/CD-Pipeline-Strategie festlegen
-- [plan] [2026-04-07] Storage-Lösung für Entwicklungsdaten auswählen
-- [plan] [2026-04-07] Multi-User-Konzept entwickeln
-- [plan] [2026-04-07] Kosten- und Skalierungsmodell definieren
-- [plan] [2026-04-07] Disaster-Recovery-Plan erstellen
-
+Aktuell keine offenen Entscheidungen.
 
 ## Backlog / Zukünftige Ausbaustufen
+
+### Projekt-Management
+
+- [Todo] Projekt-Repository erstellen
+- [Todo] Initiale Dokumentation aufsetzen
+- [Todo] Projektmeilensteine definieren
+- [Todo] Team-Rollen und Verantwortlichkeiten festlegen
+- [Todo] Kickoff-Meeting organisieren
+
+### Erweiterte Infrastruktur
+
+- [Todo] Monitoring-Lösung einrichten
+- [Todo] Backup-Strategie entwickeln und implementieren
+- [Todo] Docker/Containerumgebung einrichten
+- [Todo] Entwicklungstools und Dependencies installieren
+- [Todo] CI/CD-Pipeline-Strategie festlegen
+- [Todo] Storage-Lösung für Entwicklungsdaten auswählen
+- [Todo] Multi-User-Konzept entwickeln
+- [Todo] Kosten- und Skalierungsmodell definieren
+- [Todo] Disaster-Recovery-Plan erstellen
+
+### Erweiterte Tests
+
+- [Todo] Testplan für Komponenten erstellen
+- [Todo] Integrationstests definieren
+- [Todo] Lasttests konzipieren und implementieren
+- [Todo] Security-Audit durchführen
+- [Todo] Dokumentation der Testfälle erstellen
+
+### KI-Integration
+
+- [Todo] Roo Code Extension installieren und konfigurieren
+- [Todo] OpenRouter API-Integration einrichten
+- [Todo] Ollama installieren und konfigurieren
+- [Todo] Lokale Modelle herunterladen und einrichten
