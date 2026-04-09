@@ -2,382 +2,699 @@
 #
 # DevSystem - code-server Konfigurationsskript
 # Autor: DevSystem Team
-# Datum: 2026-04-08
+# Version: 1.0
+# Datum: 2026-04-09
 #
-# Beschreibung: 
-# Dieses Script führt die fortgeschrittene Konfiguration von code-server für DevSystem durch.
+# Beschreibung:
+# Dieses Skript konfiguriert code-server für das DevSystem-Projekt.
 # Es führt folgende Aktionen aus:
-# - Anpassung der VS Code-Einstellungen
-# - Einrichtung von Git-Konfiguration
-# - Installation zusätzlicher Extensions
-# - Anpassung der System-Einstellungen
-# - Sicherheitskonfiguration
+# - Erstellung/Aktualisierung der config.yaml
+# - Sichere Passwort-Generierung und -Speicherung
+# - Installation wichtiger VS Code Extensions
+# - Konfiguration der Workspace-Settings
+# - Service-Neustart und Validierung
+# - Detailliertes Logging und Fehlerbehandlung
+# - Backup der alten Konfiguration
 #
 # Voraussetzungen:
-# - code-server ist bereits installiert
-# - Root-Zugriff
+# - code-server muss installiert sein (via install-code-server.sh)
+# - Root-Zugriff erforderlich
+#
+# Verwendung:
+#   sudo bash configure-code-server.sh [--user=NAME] [--password=PASS] [--no-extensions] [--help]
+#
 
-set -e # Script beenden, wenn ein Befehl fehlschlägt
-set -u # Script beenden, wenn eine Variable nicht definiert ist
+set -e  # Script beenden bei Fehler
+set -u  # Script beenden bei undefinierter Variable
 
-# Farbige Ausgabe für bessere Lesbarkeit
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[0;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+# ============================================================================
+# KONFIGURATION UND KONSTANTEN
+# ============================================================================
 
-# Funktion für Step-Nachrichten
-log_step() {
-    echo -e "${BLUE}[$(date '+%Y-%m-%d %H:%M:%S')] [STEP] $1${NC}"
-}
+# Farbdefinitionen für Terminal-Ausgabe
+readonly RED='\033[0;31m'
+readonly GREEN='\033[0;32m'
+readonly YELLOW='\033[0;33m'
+readonly BLUE='\033[0;34m'
+readonly CYAN='\033[0;36m'
+readonly MAGENTA='\033[0;35m'
+readonly NC='\033[0m' # No Color
 
-# Funktion für Infos
-log_info() {
-    echo -e "${GREEN}[$(date '+%Y-%m-%d %H:%M:%S')] [INFO] $1${NC}"
-}
-
-# Funktion für Warnungen
-log_warning() {
-    echo -e "${YELLOW}[$(date '+%Y-%m-%d %H:%M:%S')] [WARN] $1${NC}"
-}
-
-# Funktion für Fehler
-log_error() {
-    echo -e "${RED}[$(date '+%Y-%m-%d %H:%M:%S')] [ERROR] $1${NC}"
-}
-
-# Prüfen, ob das Script mit Root-Rechten ausgeführt wird
-if [ "$(id -u)" != "0" ]; then
-    log_error "Dieses Script muss mit Root-Rechten ausgeführt werden."
-    exit 1
-fi
+# Verzeichnisse und Dateien
+readonly BACKUP_DIR_DEFAULT="/var/backups/code-server"
+readonly LOG_FILE="/var/log/devsystem-configure-code-server.log"
 
 # Standardwerte für Konfigurationsparameter
-CODE_SERVER_USER="coder"
-CODE_SERVER_CONFIG_DIR="/etc/code-server"
-CODE_SERVER_DATA_DIR="/var/lib/code-server"
+CODE_SERVER_USER="codeserver"
 CODE_SERVER_PORT="8080"
-GIT_USER_NAME="DevSystem"
-GIT_USER_EMAIL="devsystem@example.com"
-ENABLE_DOCKER=true
+CODE_SERVER_PASSWORD=""
 INSTALL_EXTENSIONS=true
-CONFIGURE_TERMINAL=true
+BACKUP_DIR="${BACKUP_DIR_DEFAULT}"
+
+# Extensions-Liste für DevSystem
+readonly EXTENSIONS=(
+    "saoudrizwan.claude-dev"           # Roo Cline - KI-Steuerung
+    "eamodio.gitlens"                  # GitLens - Git-Integration
+    "ms-azuretools.vscode-docker"      # Docker - Container-Management
+    "ms-vscode-remote.remote-ssh"      # Remote - SSH
+    "redhat.vscode-yaml"               # YAML - YAML-Support
+    "mads-hartmann.bash-ide-vscode"    # Bash IDE - Bash-Scripting
+)
+
+# ============================================================================
+# LOGGING-FUNKTIONEN
+# ============================================================================
+
+# Logging in Datei und Terminal
+exec > >(tee -a "$LOG_FILE")
+exec 2>&1
+
+log_message() {
+    echo -e "${BLUE}[$(date '+%Y-%m-%d %H:%M:%S')] INFO:${NC} $1"
+}
+
+log_success() {
+    echo -e "${GREEN}[$(date '+%Y-%m-%d %H:%M:%S')] ✓ SUCCESS:${NC} $1"
+}
+
+log_warning() {
+    echo -e "${YELLOW}[$(date '+%Y-%m-%d %H:%M:%S')] ⚠ WARNING:${NC} $1"
+}
+
+log_error() {
+    echo -e "${RED}[$(date '+%Y-%m-%d %H:%M:%S')] ✗ ERROR:${NC} $1"
+}
+
+log_step() {
+    echo -e "${CYAN}[$(date '+%Y-%m-%d %H:%M:%S')] STEP:${NC} $1"
+}
+
+log_password() {
+    echo -e "${MAGENTA}[$(date '+%Y-%m-%d %H:%M:%S')] 🔐 PASSWORD:${NC} $1"
+}
+
+# Fehlerbehandlung mit Exit
+error_exit() {
+    log_error "$1"
+    log_error "Konfiguration fehlgeschlagen. Siehe Log: ${LOG_FILE}"
+    exit 1
+}
+
+# ============================================================================
+# HILFSFUNKTIONEN
+# ============================================================================
+
+# Hilfe-Text anzeigen
+show_help() {
+    cat << EOF
+DevSystem - code-server Konfigurationsskript
+
+Verwendung: sudo bash configure-code-server.sh [Optionen]
+
+Optionen:
+  --user=NAME           Benutzername für code-server (Standard: codeserver)
+  --password=PASS       Eigenes Passwort setzen (statt generieren)
+  --no-extensions       Keine Extensions installieren
+  --backup-dir=DIR      Verzeichnis für Backups (Standard: ${BACKUP_DIR_DEFAULT})
+  --help                Diese Hilfe anzeigen
+
+Beispiele:
+  sudo bash configure-code-server.sh
+  sudo bash configure-code-server.sh --user=codeserver
+  sudo bash configure-code-server.sh --password=MeinSicheresPasswort123
+  sudo bash configure-code-server.sh --no-extensions
+
+Voraussetzungen:
+  - code-server muss installiert sein
+  - Root-Rechte erforderlich
+
+EOF
+    exit 0
+}
 
 # Kommandozeilenargumente parsen
-while [[ "$#" -gt 0 ]]; do
-    case $1 in
-        --user=*) CODE_SERVER_USER="${1#*=}"; shift ;;
-        --config-dir=*) CODE_SERVER_CONFIG_DIR="${1#*=}"; shift ;;
-        --data-dir=*) CODE_SERVER_DATA_DIR="${1#*=}"; shift ;;
-        --port=*) CODE_SERVER_PORT="${1#*=}"; shift ;;
-        --git-user=*) GIT_USER_NAME="${1#*=}"; shift ;;
-        --git-email=*) GIT_USER_EMAIL="${1#*=}"; shift ;;
-        --no-docker) ENABLE_DOCKER=false; shift ;;
-        --no-extensions) INSTALL_EXTENSIONS=false; shift ;;
-        --no-terminal-config) CONFIGURE_TERMINAL=false; shift ;;
-        --help) 
-            echo "Verwendung: $0 [Optionen]"
-            echo "Optionen:"
-            echo "  --user=USER             Benutzername für code-server (Standard: $CODE_SERVER_USER)"
-            echo "  --config-dir=DIR        Konfigurationsverzeichnis (Standard: $CODE_SERVER_CONFIG_DIR)"
-            echo "  --data-dir=DIR          Datenverzeichnis (Standard: $CODE_SERVER_DATA_DIR)"
-            echo "  --port=PORT             Port für code-server (Standard: $CODE_SERVER_PORT)"
-            echo "  --git-user=NAME         Git-Benutzername (Standard: $GIT_USER_NAME)"
-            echo "  --git-email=EMAIL       Git-E-Mail-Adresse (Standard: $GIT_USER_EMAIL)"
-            echo "  --no-docker             Docker-Integration deaktivieren"
-            echo "  --no-extensions         Keine zusätzlichen Extensions installieren"
-            echo "  --no-terminal-config    Terminal nicht konfigurieren"
-            exit 0
-            ;;
-        *) log_error "Unbekannter Parameter: $1"; exit 1 ;;
-    esac
-done
+parse_arguments() {
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --user=*)
+                CODE_SERVER_USER="${1#*=}"
+                shift
+                ;;
+            --password=*)
+                CODE_SERVER_PASSWORD="${1#*=}"
+                shift
+                ;;
+            --no-extensions)
+                INSTALL_EXTENSIONS=false
+                shift
+                ;;
+            --backup-dir=*)
+                BACKUP_DIR="${1#*=}"
+                shift
+                ;;
+            --help)
+                show_help
+                ;;
+            *)
+                error_exit "Unbekannter Parameter: $1. Verwende --help für Hilfe."
+                ;;
+        esac
+    done
+}
 
-# Willkommensnachricht
-log_step "Starte fortgeschrittene code-server Konfiguration..."
+# ============================================================================
+# VALIDIERUNGSFUNKTIONEN
+# ============================================================================
+
+# Root-Berechtigungen prüfen
+check_root() {
+    if [ "$(id -u)" != "0" ]; then
+        error_exit "Dieses Skript muss mit Root-Rechten ausgeführt werden. Verwende 'sudo'."
+    fi
+}
 
 # Prüfen, ob code-server installiert ist
-if ! command -v code-server &> /dev/null; then
-    log_error "code-server ist nicht installiert. Bitte zuerst code-server installieren."
-    exit 1
-fi
-
-# Prüfen, ob der Benutzer existiert
-if ! id -u "$CODE_SERVER_USER" &>/dev/null; then
-    log_error "Der Benutzer '$CODE_SERVER_USER' existiert nicht. Bitte zuerst den Benutzer erstellen."
-    exit 1
-fi
-
-# Prüfen, ob code-server läuft
-if ! systemctl is-active --quiet code-server.service; then
-    log_warning "code-server ist nicht aktiv. Starte den Service..."
-    systemctl start code-server.service
+check_code_server_installed() {
+    log_step "Prüfe ob code-server installiert ist..."
     
-    # Kurz warten und erneut prüfen
-    sleep 3
-    if ! systemctl is-active --quiet code-server.service; then
-        log_error "code-server konnte nicht gestartet werden. Bitte überprüfen Sie die Logs mit 'journalctl -u code-server'."
-        exit 1
+    if ! command -v code-server &> /dev/null; then
+        error_exit "code-server ist nicht installiert. Bitte führe zuerst 'install-code-server.sh' aus."
     fi
-fi
-
-# Benutzereinstellungen für VS Code konfigurieren
-log_step "Konfiguriere VS Code Benutzereinstellungen..."
-
-USER_HOME=$(eval echo ~${CODE_SERVER_USER})
-SETTINGS_DIR="${USER_HOME}/.local/share/code-server/User"
-mkdir -p "$SETTINGS_DIR"
-
-# settings.json erstellen/aktualisieren
-cat > "$SETTINGS_DIR/settings.json" << EOF
-{
-    "files.autoSave": "afterDelay",
-    "files.autoSaveDelay": 1000,
-    "editor.fontSize": 14,
-    "editor.fontFamily": "'JetBrains Mono', Menlo, Monaco, 'Courier New', monospace",
-    "editor.fontLigatures": true,
-    "editor.bracketPairColorization.enabled": true,
-    "editor.guides.bracketPairs": true,
-    "editor.formatOnSave": true,
-    "editor.minimap.enabled": true,
-    "editor.renderWhitespace": "boundary",
-    "editor.rulers": [80, 120],
-    "editor.tabSize": 4,
-    "editor.codeActionsOnSave": {
-        "source.organizeImports": true
-    },
-    "workbench.colorTheme": "Default Dark+",
-    "workbench.startupEditor": "none",
-    "terminal.integrated.fontSize": 14,
-    "terminal.integrated.profiles.linux": {
-        "bash": {
-            "path": "/bin/bash",
-            "icon": "terminal-bash"
-        }
-    },
-    "terminal.integrated.defaultProfile.linux": "bash",
-    "explorer.confirmDelete": false,
-    "telemetry.telemetryLevel": "off",
-    "security.workspace.trust.enabled": false,
-    "git.autofetch": true,
-    "git.confirmSync": false
+    
+    local version=$(code-server --version 2>&1 | head -n1)
+    log_success "code-server ist installiert: ${version}"
 }
-EOF
 
-# keybindings.json erstellen
-cat > "$SETTINGS_DIR/keybindings.json" << EOF
-[
-    {
-        "key": "ctrl+shift+b",
-        "command": "workbench.action.tasks.build"
-    },
-    {
-        "key": "ctrl+shift+t",
-        "command": "workbench.action.terminal.toggleTerminal"
-    }
-]
-EOF
-
-# Berechtigungen anpassen
-chown -R "$CODE_SERVER_USER":"$CODE_SERVER_USER" "$SETTINGS_DIR"
-log_info "VS Code Benutzereinstellungen wurden konfiguriert."
-
-# Git-Konfiguration für den Benutzer
-log_step "Konfiguriere Git für den Benutzer $CODE_SERVER_USER..."
-
-sudo -u "$CODE_SERVER_USER" bash -c "git config --global user.name \"${GIT_USER_NAME}\""
-sudo -u "$CODE_SERVER_USER" bash -c "git config --global user.email \"${GIT_USER_EMAIL}\""
-sudo -u "$CODE_SERVER_USER" bash -c "git config --global init.defaultBranch main"
-sudo -u "$CODE_SERVER_USER" bash -c "git config --global core.editor nano"
-sudo -u "$CODE_SERVER_USER" bash -c "git config --global push.default simple"
-sudo -u "$CODE_SERVER_USER" bash -c "git config --global pull.rebase false"
-
-log_info "Git-Konfiguration wurde eingerichtet."
-
-# Installation von erweiterten VS Code Extensions
-if [ "$INSTALL_EXTENSIONS" = true ]; then
-    log_step "Installiere erweiterte VS Code Extensions..."
+# Prüfen, ob Benutzer existiert
+check_user_exists() {
+    log_step "Prüfe ob Benutzer '${CODE_SERVER_USER}' existiert..."
     
-    EXTENDED_EXTENSIONS=(
-        "streetsidesoftware.code-spell-checker"
-        "eamodio.gitlens"
-        "esbenp.prettier-vscode"
-        "ms-vscode.makefile-tools"
-        "coenraads.bracket-pair-colorizer-2"
-        "yzhang.markdown-all-in-one"
-        "hashicorp.terraform"
-        "christian-kohler.path-intellisense"
-        "pkief.material-icon-theme"
-        "ms-kubernetes-tools.vscode-kubernetes-tools"
-    )
+    if ! id "${CODE_SERVER_USER}" &> /dev/null; then
+        error_exit "Benutzer '${CODE_SERVER_USER}' existiert nicht. Bitte führe zuerst 'install-code-server.sh' aus."
+    fi
     
-    for ext in "${EXTENDED_EXTENSIONS[@]}"; do
-        log_info "Installiere Extension $ext..."
-        sudo -u "$CODE_SERVER_USER" code-server --install-extension "$ext" || log_warning "Installation von $ext fehlgeschlagen."
-    done
-    
-    log_info "Erweiterte VS Code Extensions wurden installiert."
-fi
+    log_success "Benutzer '${CODE_SERVER_USER}' existiert."
+}
 
-# Docker-Integration (falls aktiviert)
-if [ "$ENABLE_DOCKER" = true ]; then
-    log_step "Konfiguriere Docker-Integration..."
+# Prüfen, ob Service existiert
+check_service_exists() {
+    log_step "Prüfe ob code-server-Service existiert..."
     
-    # Prüfen, ob Docker installiert ist
-    if ! command -v docker &> /dev/null; then
-        log_warning "Docker ist nicht installiert. Die Docker-Integration wird übersprungen."
-    else
-        # Füge Benutzer zur Docker-Gruppe hinzu
-        if getent group docker > /dev/null; then
-            usermod -aG docker "$CODE_SERVER_USER"
-            log_info "Benutzer $CODE_SERVER_USER wurde zur Docker-Gruppe hinzugefügt."
-        else
-            log_warning "Docker-Gruppe existiert nicht. Die Docker-Gruppe-Integration wird übersprungen."
+    if ! systemctl list-unit-files | grep -q "code-server.service"; then
+        error_exit "code-server-Service existiert nicht. Bitte führe zuerst 'install-code-server.sh' aus."
+    fi
+    
+    log_success "code-server-Service existiert."
+}
+
+# ============================================================================
+# BACKUP-FUNKTIONEN
+# ============================================================================
+
+# Backup der alten Konfiguration erstellen
+backup_config() {
+    log_step "Erstelle Backup der aktuellen Konfiguration..."
+    
+    local user_home="/home/${CODE_SERVER_USER}"
+    local config_file="${user_home}/.config/code-server/config.yaml"
+    local settings_file="${user_home}/.local/share/code-server/User/settings.json"
+    
+    # Backup-Verzeichnis erstellen
+    mkdir -p "${BACKUP_DIR}"
+    
+    local timestamp=$(date +%Y%m%d_%H%M%S)
+    local backup_path="${BACKUP_DIR}/code-server_backup_${timestamp}"
+    
+    # Prüfen, ob Konfiguration existiert
+    if [ -f "${config_file}" ] || [ -f "${settings_file}" ]; then
+        mkdir -p "${backup_path}"
+        
+        # config.yaml sichern
+        if [ -f "${config_file}" ]; then
+            cp "${config_file}" "${backup_path}/" 2>/dev/null || true
+            log_message "config.yaml gesichert."
         fi
         
-        # Docker-Verzeichnis im Home-Verzeichnis erstellen
-        mkdir -p "${USER_HOME}/docker-projects"
-        chown "$CODE_SERVER_USER":"$CODE_SERVER_USER" "${USER_HOME}/docker-projects"
+        # settings.json sichern
+        if [ -f "${settings_file}" ]; then
+            mkdir -p "${backup_path}/User"
+            cp "${settings_file}" "${backup_path}/User/" 2>/dev/null || true
+            log_message "settings.json gesichert."
+        fi
         
-        log_info "Docker-Integration wurde konfiguriert."
+        # Extensions-Liste sichern
+        if [ -d "${user_home}/.local/share/code-server/extensions" ]; then
+            ls "${user_home}/.local/share/code-server/extensions" > "${backup_path}/extensions-list.txt" 2>/dev/null || true
+        fi
+        
+        log_success "Backup erstellt: ${backup_path}"
+        echo "${backup_path}" > "${BACKUP_DIR}/latest_backup.txt"
+    else
+        log_message "Keine vorherige Konfiguration gefunden. Kein Backup notwendig."
     fi
-fi
+}
 
-# Terminal-Konfiguration
-if [ "$CONFIGURE_TERMINAL" = true ]; then
-    log_step "Konfiguriere Terminal für den Benutzer $CODE_SERVER_USER..."
+# ============================================================================
+# PASSWORT-FUNKTIONEN
+# ============================================================================
+
+# Sicheres Passwort generieren
+generate_password() {
+    log_step "Generiere sicheres Passwort..."
     
-    # .bashrc anpassen
-    BASHRC_FILE="${USER_HOME}/.bashrc"
+    # Passwort mit openssl generieren (32 Zeichen Base64)
+    local password=$(openssl rand -base64 32 | tr -d "=+/" | cut -c1-32)
     
-    # Backup erstellen, falls die Datei existiert
-    if [ -f "$BASHRC_FILE" ]; then
-        cp "$BASHRC_FILE" "${BASHRC_FILE}.bak"
+    if [ -z "$password" ]; then
+        error_exit "Konnte kein Passwort generieren."
     fi
     
-    # Ergänze die .bashrc
-    cat >> "$BASHRC_FILE" << EOF
+    log_success "Passwort erfolgreich generiert (32 Zeichen)."
+    echo "$password"
+}
 
-# DevSystem Konfiguration
-export EDITOR=nano
-export LC_ALL=en_US.UTF-8
-export LANG=en_US.UTF-8
+# Passwort sicher speichern
+save_password() {
+    local password="$1"
+    local user_home="/home/${CODE_SERVER_USER}"
+    local password_file="${user_home}/.config/code-server/password.txt"
+    
+    log_step "Speichere Passwort sicher..."
+    
+    # Passwort in Datei speichern
+    echo "$password" > "$password_file"
+    
+    # Berechtigungen setzen (nur User lesbar)
+    chown "${CODE_SERVER_USER}:${CODE_SERVER_USER}" "$password_file"
+    chmod 600 "$password_file"
+    
+    log_success "Passwort gespeichert in: ${password_file}"
+    log_message "Berechtigungen: 600 (nur User lesbar)"
+}
 
-# Aliase
-alias ll='ls -la'
-alias l='ls -l'
-alias c='clear'
-alias h='history'
-alias update='sudo apt update && sudo apt upgrade -y'
-alias ..='cd ..'
-alias ...='cd ../..'
+# ============================================================================
+# KONFIGURATIONSFUNKTIONEN
+# ============================================================================
 
-# Git-Aliase
-alias gs='git status'
-alias gc='git commit'
-alias gp='git push'
-alias gl='git pull'
-alias ga='git add'
-alias gd='git diff'
-alias gb='git branch'
-alias gco='git checkout'
+# Verzeichnisstruktur erstellen
+create_directory_structure() {
+    log_step "Erstelle/Prüfe Verzeichnisstruktur..."
+    
+    local user_home="/home/${CODE_SERVER_USER}"
+    
+    # Verzeichnisse erstellen
+    mkdir -p "${user_home}/.config/code-server"
+    mkdir -p "${user_home}/.local/share/code-server"
+    mkdir -p "${user_home}/.local/share/code-server/User"
+    mkdir -p "${user_home}/.local/share/code-server/extensions"
+    
+    # Berechtigungen setzen
+    chown -R "${CODE_SERVER_USER}:${CODE_SERVER_USER}" "${user_home}/.config/code-server"
+    chown -R "${CODE_SERVER_USER}:${CODE_SERVER_USER}" "${user_home}/.local/share/code-server"
+    
+    log_success "Verzeichnisstruktur erstellt/geprüft."
+}
 
-# Bessere Eingabeaufforderung
-export PS1='\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\\$ '
+# config.yaml erstellen/aktualisieren
+create_config_yaml() {
+    local password="$1"
+    local user_home="/home/${CODE_SERVER_USER}"
+    local config_file="${user_home}/.config/code-server/config.yaml"
+    
+    log_step "Erstelle config.yaml..."
+    
+    cat > "${config_file}" << EOF
+# code-server Konfiguration für DevSystem
+# Generiert durch configure-code-server.sh am $(date '+%Y-%m-%d %H:%M:%S')
 
-# Pfad erweitern
-export PATH=\$PATH:\$HOME/.local/bin
+# Bind-Adresse: nur localhost, Caddy als Reverse Proxy
+bind-addr: 127.0.0.1:${CODE_SERVER_PORT}
 
-# Verlauf-Größe erhöhen
-export HISTSIZE=10000
-export HISTFILESIZE=10000
+# Authentifizierung: Passwort
+auth: password
+password: ${password}
+
+# TLS wird von Caddy übernommen
+cert: false
+
+# Datenverzeichnisse
+user-data-dir: ${user_home}/.local/share/code-server
+extensions-dir: ${user_home}/.local/share/code-server/extensions
 EOF
     
-    # .inputrc für bessere Tastatureingabe erstellen
-    cat > "${USER_HOME}/.inputrc" << EOF
-# Eingabeverhalten verbessern
-set completion-ignore-case On
-set show-all-if-ambiguous On
-set show-all-if-unmodified On
-set mark-symlinked-directories On
-set colored-stats On
-set visible-stats On
-set echo-control-characters Off
-set input-meta On
-set output-meta On
-set convert-meta Off
+    # Berechtigungen setzen (nur User lesbar)
+    chown "${CODE_SERVER_USER}:${CODE_SERVER_USER}" "${config_file}"
+    chmod 600 "${config_file}"
+    
+    log_success "config.yaml erstellt: ${config_file}"
+    log_message "Berechtigungen: 600 (nur User lesbar)"
+}
+
+# Workspace-Settings erstellen
+create_workspace_settings() {
+    log_step "Erstelle Workspace-Settings..."
+    
+    local user_home="/home/${CODE_SERVER_USER}"
+    local settings_file="${user_home}/.local/share/code-server/User/settings.json"
+    
+    cat > "${settings_file}" << 'EOF'
+{
+  "workbench.colorTheme": "Default Dark Modern",
+  "workbench.iconTheme": "vs-minimal",
+  "workbench.startupEditor": "none",
+  "workbench.editor.enablePreview": false,
+  "workbench.editor.showTabs": true,
+  "workbench.editor.tabSizing": "shrink",
+  "workbench.editor.tabCloseButton": "right",
+  "workbench.editor.limit.enabled": true,
+  "workbench.editor.limit.value": 10,
+  
+  "editor.fontSize": 14,
+  "editor.fontFamily": "'Droid Sans Mono', 'monospace'",
+  "editor.tabSize": 2,
+  "editor.wordWrap": "on",
+  "editor.formatOnSave": true,
+  "editor.minimap.enabled": true,
+  "editor.renderWhitespace": "boundary",
+  "editor.rulers": [80, 120],
+  
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 1000,
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  
+  "terminal.integrated.fontSize": 14,
+  "terminal.integrated.defaultProfile.linux": "bash",
+  "terminal.integrated.scrollback": 10000,
+  
+  "git.enabled": true,
+  "git.autofetch": true,
+  "git.confirmSync": false,
+  
+  "extensions.autoUpdate": true,
+  "extensions.autoCheckUpdates": true,
+  
+  "telemetry.telemetryLevel": "off",
+  "security.workspace.trust.enabled": false,
+  
+  "window.zoomLevel": 0,
+  "window.menuBarVisibility": "toggle"
+}
 EOF
     
-    # Berechtigungen anpassen
-    chown "$CODE_SERVER_USER":"$CODE_SERVER_USER" "$BASHRC_FILE"
-    chown "$CODE_SERVER_USER":"$CODE_SERVER_USER" "${USER_HOME}/.inputrc"
+    # Berechtigungen setzen
+    chown "${CODE_SERVER_USER}:${CODE_SERVER_USER}" "${settings_file}"
+    chmod 644 "${settings_file}"
     
-    log_info "Terminal-Konfiguration wurde eingerichtet."
-fi
+    log_success "Workspace-Settings erstellt: ${settings_file}"
+}
 
-# Erstelle ein Beispielprojekt
-log_step "Erstelle Beispielprojekt..."
+# ============================================================================
+# EXTENSIONS-FUNKTIONEN
+# ============================================================================
 
-PROJECT_DIR="${USER_HOME}/projects/devsystem-demo"
-mkdir -p "$PROJECT_DIR"
+# Extensions installieren
+install_extensions() {
+    if [ "$INSTALL_EXTENSIONS" = false ]; then
+        log_message "Extension-Installation übersprungen (--no-extensions)."
+        return 0
+    fi
+    
+    log_step "Installiere VS Code Extensions..."
+    
+    local user_home="/home/${CODE_SERVER_USER}"
+    local installed_count=0
+    local failed_count=0
+    local failed_extensions=()
+    
+    for ext in "${EXTENSIONS[@]}"; do
+        log_message "Installiere Extension: ${ext}"
+        
+        # Extension als User installieren
+        if su - "${CODE_SERVER_USER}" -c "code-server --install-extension ${ext} --force" >> "$LOG_FILE" 2>&1; then
+            log_success "  ✓ ${ext} installiert"
+            ((installed_count++))
+        else
+            log_warning "  ✗ ${ext} konnte nicht installiert werden"
+            failed_extensions+=("${ext}")
+            ((failed_count++))
+        fi
+    done
+    
+    echo ""
+    log_success "Extensions-Installation abgeschlossen:"
+    log_message "  • Erfolgreich installiert: ${installed_count}"
+    
+    if [ $failed_count -gt 0 ]; then
+        log_warning "  • Fehlgeschlagen: ${failed_count}"
+        log_warning "  • Fehlgeschlagene Extensions:"
+        for ext in "${failed_extensions[@]}"; do
+            log_warning "    - ${ext}"
+        done
+    fi
+}
 
-cat > "${PROJECT_DIR}/README.md" << EOF
-# DevSystem Demo Projekt
+# Installierte Extensions auflisten
+list_installed_extensions() {
+    log_step "Liste installierte Extensions auf..."
+    
+    local user_home="/home/${CODE_SERVER_USER}"
+    
+    if su - "${CODE_SERVER_USER}" -c "code-server --list-extensions" > /tmp/extensions-list.txt 2>&1; then
+        local ext_count=$(wc -l < /tmp/extensions-list.txt)
+        log_success "Installierte Extensions (${ext_count}):"
+        
+        while IFS= read -r ext; do
+            echo "  • ${ext}"
+        done < /tmp/extensions-list.txt
+        
+        rm -f /tmp/extensions-list.txt
+    else
+        log_warning "Konnte Extensions nicht auflisten."
+    fi
+}
 
-Dieses Projekt dient als Beispiel für die DevSystem-Infrastruktur.
+# ============================================================================
+# SERVICE-MANAGEMENT
+# ============================================================================
 
-## Funktionen
+# Service neu starten
+restart_service() {
+    log_step "Starte code-server-Service neu..."
+    
+    if systemctl restart code-server 2>&1 | tee -a "$LOG_FILE"; then
+        log_success "Service erfolgreich neu gestartet."
+    else
+        log_error "Fehler beim Neustart des Services."
+        return 1
+    fi
+    
+    # Kurz warten, damit Service hochfahren kann
+    sleep 3
+}
 
-- Beispiel für die code-server Integration
-- Tailscale-gesicherte Verbindung
-- Automatische Bereitstellung über Caddy
+# Service-Status prüfen
+check_service_status() {
+    log_step "Prüfe Service-Status..."
+    
+    if systemctl is-active --quiet code-server; then
+        log_success "code-server-Service läuft."
+        
+        # Detaillierte Status-Informationen
+        log_message "Service-Details:"
+        systemctl status code-server --no-pager -l | head -n 15 | tee -a "$LOG_FILE"
+        
+        return 0
+    else
+        log_error "code-server-Service läuft nicht!"
+        log_error "Prüfe Logs mit: journalctl -u code-server -n 50"
+        
+        # Zeige letzte Log-Einträge
+        log_message "Letzte Log-Einträge:"
+        journalctl -u code-server -n 20 --no-pager | tee -a "$LOG_FILE"
+        
+        return 1
+    fi
+}
 
-## Entwicklung
+# Logs validieren
+validate_logs() {
+    log_step "Validiere Service-Logs..."
+    
+    # Warte kurz, damit Logs geschrieben werden
+    sleep 2
+    
+    # Prüfe auf Fehler in den Logs
+    local error_count=$(journalctl -u code-server -n 50 --no-pager | grep -i "error" | wc -l)
+    
+    if [ "$error_count" -gt 0 ]; then
+        log_warning "Gefundene Fehler in Logs: ${error_count}"
+        log_message "Letzte Fehler:"
+        journalctl -u code-server -n 50 --no-pager | grep -i "error" | tail -n 5
+    else
+        log_success "Keine Fehler in den Logs gefunden."
+    fi
+    
+    # Prüfe ob code-server auf Port lauscht
+    if ss -tlnp | grep -q ":${CODE_SERVER_PORT}"; then
+        log_success "code-server lauscht auf Port ${CODE_SERVER_PORT}."
+    else
+        log_warning "code-server scheint nicht auf Port ${CODE_SERVER_PORT} zu lauschen."
+    fi
+}
 
-Für die Entwicklung nutze die integrierten Terminal-Funktionen von VS Code.
-EOF
+# ============================================================================
+# ZUSAMMENFASSUNG UND AUSGABE
+# ============================================================================
 
-# Berechtigungen anpassen
-chown -R "$CODE_SERVER_USER":"$CODE_SERVER_USER" "${USER_HOME}/projects"
+# Passwort sicher anzeigen
+display_password() {
+    local password="$1"
+    
+    echo ""
+    echo "============================================================================"
+    log_password "WICHTIG: Generiertes Passwort für code-server"
+    echo "============================================================================"
+    echo ""
+    echo -e "${MAGENTA}Passwort: ${GREEN}${password}${NC}"
+    echo ""
+    log_warning "Bitte speichere dieses Passwort sicher!"
+    log_message "Das Passwort wurde auch gespeichert in:"
+    echo "  /home/${CODE_SERVER_USER}/.config/code-server/password.txt"
+    echo ""
+    echo "============================================================================"
+    echo ""
+}
 
-log_info "Beispielprojekt wurde erstellt."
+# Abschlussinformationen anzeigen
+show_summary() {
+    local password="$1"
+    local tailscale_ip=""
+    
+    # Versuche Tailscale-IP zu ermitteln
+    if command -v tailscale &> /dev/null; then
+        tailscale_ip=$(tailscale ip -4 2>/dev/null | head -n1 || echo "nicht verfügbar")
+    else
+        tailscale_ip="nicht verfügbar (Tailscale nicht installiert)"
+    fi
+    
+    echo ""
+    echo "============================================================================"
+    log_success "code-server-Konfiguration erfolgreich abgeschlossen!"
+    echo "============================================================================"
+    echo ""
+    log_message "Konfigurationsdetails:"
+    echo "  • Benutzer:              ${CODE_SERVER_USER}"
+    echo "  • Bind-Adresse:          127.0.0.1:${CODE_SERVER_PORT}"
+    echo "  • Authentifizierung:     password"
+    echo "  • TLS:                   false (Caddy übernimmt SSL)"
+    echo "  • Extensions installiert: ${INSTALL_EXTENSIONS}"
+    echo ""
+    log_message "Zugriffs-URLs (über Caddy/Tailscale):"
+    if [ "$tailscale_ip" != "nicht verfügbar (Tailscale nicht installiert)" ]; then
+        echo "  • https://${tailscale_ip}:9443"
+    fi
+    echo "  • https://[TAILSCALE-IP]"
+    echo "  • https://[TAILSCALE-DOMAIN]"
+    echo ""
+    log_message "Wichtige Dateien:"
+    echo "  • Konfiguration:         /home/${CODE_SERVER_USER}/.config/code-server/config.yaml"
+    echo "  • Passwort-Datei:        /home/${CODE_SERVER_USER}/.config/code-server/password.txt"
+    echo "  • Workspace-Settings:    /home/${CODE_SERVER_USER}/.local/share/code-server/User/settings.json"
+    echo "  • Extensions-Verzeichnis: /home/${CODE_SERVER_USER}/.local/share/code-server/extensions"
+    echo "  • Konfig-Log:            ${LOG_FILE}"
+    echo ""
+    log_message "Nützliche Befehle:"
+    echo "  • Status prüfen:         sudo systemctl status code-server"
+    echo "  • Logs anzeigen:         sudo journalctl -u code-server -f"
+    echo "  • Service neustarten:    sudo systemctl restart code-server"
+    echo "  • Extensions auflisten:  su - ${CODE_SERVER_USER} -c 'code-server --list-extensions'"
+    echo ""
+    log_message "Nächste Schritte:"
+    echo "  1. Stelle sicher, dass Caddy als Reverse Proxy konfiguriert ist"
+    echo "  2. Greife über Tailscale auf code-server zu"
+    echo "  3. Melde dich mit dem generierten Passwort an"
+    echo "  4. Installiere weitere Extensions nach Bedarf"
+    echo ""
+    echo "============================================================================"
+    echo ""
+}
 
-# Systemeinstellungen anpassen
-log_step "Passe Systemeinstellungen an..."
+# ============================================================================
+# HAUPTPROGRAMM
+# ============================================================================
 
-# Aktiviere Code-Server Service
-systemctl restart code-server.service
+main() {
+    # Banner
+    echo ""
+    echo "============================================================================"
+    echo "  DevSystem - code-server Konfigurationsskript"
+    echo "  Version 1.0"
+    echo "============================================================================"
+    echo ""
+    
+    # Argumente parsen
+    parse_arguments "$@"
+    
+    # Validierungen
+    check_root
+    check_code_server_installed
+    check_user_exists
+    check_service_exists
+    
+    # Backup erstellen
+    backup_config
+    
+    # Passwort generieren oder verwenden
+    local password=""
+    if [ -z "$CODE_SERVER_PASSWORD" ]; then
+        password=$(generate_password)
+    else
+        password="$CODE_SERVER_PASSWORD"
+        log_message "Verwende benutzerdefiniertes Passwort."
+    fi
+    
+    # Passwort speichern
+    save_password "$password"
+    
+    # Konfiguration erstellen
+    create_directory_structure
+    create_config_yaml "$password"
+    create_workspace_settings
+    
+    # Extensions installieren
+    install_extensions
+    
+    # Service neu starten
+    if ! restart_service; then
+        error_exit "Service-Neustart fehlgeschlagen. Prüfe die Logs."
+    fi
+    
+    # Status prüfen
+    if ! check_service_status; then
+        error_exit "Service läuft nicht korrekt. Prüfe die Logs."
+    fi
+    
+    # Logs validieren
+    validate_logs
+    
+    # Installierte Extensions auflisten
+    if [ "$INSTALL_EXTENSIONS" = true ]; then
+        echo ""
+        list_installed_extensions
+    fi
+    
+    # Passwort anzeigen (nur wenn generiert)
+    if [ -z "$CODE_SERVER_PASSWORD" ]; then
+        display_password "$password"
+    fi
+    
+    # Zusammenfassung anzeigen
+    show_summary "$password"
+    
+    log_success "Konfiguration erfolgreich abgeschlossen!"
+    exit 0
+}
 
-# Prüfe, ob der Dienst läuft
-if systemctl is-active --quiet code-server.service; then
-    log_info "code-server Dienst wurde neu gestartet und läuft."
-else
-    log_error "code-server Dienst konnte nicht gestartet werden. Bitte überprüfen Sie die Logs mit 'journalctl -u code-server'."
-    exit 1
-fi
-
-# Zusammenfassung
-log_step "Konfiguration von code-server abgeschlossen"
-log_info "Benutzer: $CODE_SERVER_USER"
-log_info "Port: $CODE_SERVER_PORT"
-log_info "Konfigurationsverzeichnis: $CODE_SERVER_CONFIG_DIR"
-log_info "Datenverzeichnis: $CODE_SERVER_DATA_DIR"
-
-log_info "Zugriff über: http://localhost:$CODE_SERVER_PORT"
-log_info "Zugriff über Caddy: https://code.devsystem.internal:9443"
-
-log_info "Git-Benutzer: $GIT_USER_NAME"
-log_info "Git-E-Mail: $GIT_USER_EMAIL"
-
-log_info "code-server systemd service: code-server.service"
-log_info "Logs anzeigen mit: journalctl -u code-server"
-
-if [ "$ENABLE_DOCKER" = true ]; then
-    log_info "Docker-Integration: Aktiviert"
-else
-    log_info "Docker-Integration: Deaktiviert"
-fi
-
-log_info "Konfiguration erfolgreich abgeschlossen!"
-exit 0
+# Skript ausführen
+main "$@"
