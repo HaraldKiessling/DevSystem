@@ -1,0 +1,357 @@
+#cloud-config
+#
+# DevSystem - QS-VPS Cloud-Init Configuration
+# Version: 1.0
+# Autor: DevSystem Team
+# Datum: 2026-04-09
+#
+# Beschreibung:
+# Dieses Cloud-Init Script automatisiert die komplette Einrichtung eines
+# Quality-Server (QS) VPS mit Tailscale-Integration und Sicherheitshärtung.
+#
+# Funktionen:
+# - Systemaktualisierung
+# - Tailscale-Installation und -Konfiguration
+# - UFW Firewall-Setup (nur Tailscale-Zugang)
+# - Fail2ban für Brute-Force-Schutz
+# - Hostname-Konfiguration
+# - Automatisches Logging
+#
+# Verwendung:
+# Dieses Script wird bei der IONOS VPS-Installation als Cloud-Init Script hinterlegt.
+# Vor der Verwendung muss der Tailscale Auth Key angepasst werden (siehe Dokumentation).
+
+# Hostname setzen
+hostname: devsystem-qs-vps
+fqdn: devsystem-qs-vps.local
+
+# Zeitzone konfigurieren
+timezone: Europe/Berlin
+
+# Paket-Updates aktivieren
+package_update: true
+package_upgrade: true
+package_reboot_if_required: false
+
+# Pakete, die installiert werden sollen
+packages:
+  - curl
+  - wget
+  - git
+  - unzip
+  - apt-transport-https
+  - ca-certificates
+  - gnupg
+  - lsb-release
+  - software-properties-common
+  - ufw
+  - fail2ban
+  - auditd
+
+# Dateien erstellen
+write_files:
+  # Fail2ban Konfiguration für SSH-Schutz
+  - path: /etc/fail2ban/jail.local
+    content: |
+      [DEFAULT]
+      bantime = 3600
+      findtime = 600
+      maxretry = 5
+      
+      [sshd]
+      enabled = true
+      port = 22
+      logpath = %(sshd_log)s
+      backend = %(sshd_backend)s
+    permissions: '0644'
+    owner: root:root
+
+  # Sysctl Sicherheitsparameter
+  - path: /etc/sysctl.d/99-devsystem-security.conf
+    content: |
+      # IP Spoofing protection
+      net.ipv4.conf.all.rp_filter = 1
+      net.ipv4.conf.default.rp_filter = 1
+      
+      # Ignore ICMP broadcast requests
+      net.ipv4.icmp_echo_ignore_broadcasts = 1
+      
+      # Disable source packet routing
+      net.ipv4.conf.all.accept_source_route = 0
+      net.ipv4.conf.default.accept_source_route = 0
+      
+      # Ignore send redirects
+      net.ipv4.conf.all.send_redirects = 0
+      net.ipv4.conf.default.send_redirects = 0
+      
+      # Block SYN attacks
+      net.ipv4.tcp_syncookies = 1
+      net.ipv4.tcp_max_syn_backlog = 2048
+      net.ipv4.tcp_synack_retries = 2
+      net.ipv4.tcp_syn_retries = 5
+      
+      # Log Martians
+      net.ipv4.conf.all.log_martians = 1
+      net.ipv4.conf.default.log_martians = 1
+      
+      # Increase system file descriptor limit
+      fs.file-max = 65535
+    permissions: '0644'
+    owner: root:root
+
+  # Audit-Regeln für erweiterte Systemüberwachung
+  - path: /etc/audit/rules.d/devsystem-audit.rules
+    content: |
+      # Prüfung von Dateizugriffen
+      -w /etc/passwd -p wa -k identity
+      -w /etc/group -p wa -k identity
+      -w /etc/shadow -p wa -k identity
+      -w /etc/sudoers -p wa -k sudoers
+      
+      # Überwachung von Systemaufrufen
+      -a exit,always -F arch=b64 -S sethostname -S setdomainname -k system-locale
+      -a exit,always -F arch=b32 -S sethostname -S setdomainname -k system-locale
+      -w /etc/issue -p wa -k system-locale
+      -w /etc/hostname -p wa -k system-locale
+      
+      # Überwachung von Benutzer- und Gruppenverwaltung
+      -w /usr/bin/passwd -p x -k passwd_modification
+      -w /usr/bin/groupadd -p x -k group_modification
+      -w /usr/bin/useradd -p x -k user_modification
+    permissions: '0640'
+    owner: root:root
+
+  # Tailscale Auto-Login Script
+  - path: /usr/local/bin/tailscale-setup.sh
+    content: |
+      #!/bin/bash
+      # Tailscale Setup Script - Teil des Cloud-Init Prozesses
+      set -e
+      
+      LOG_FILE="/var/log/tailscale-setup.log"
+      exec > >(tee -a "$LOG_FILE")
+      exec 2>&1
+      
+      echo "[$(date)] Starting Tailscale setup..."
+      
+      # Warten bis Tailscale-Dienst bereit ist
+      for i in {1..30}; do
+        if systemctl is-active --quiet tailscaled; then
+          echo "[$(date)] Tailscale daemon is active"
+          break
+        fi
+        echo "[$(date)] Waiting for tailscaled to start (attempt $i/30)..."
+        sleep 2
+      done
+      
+      # Tailscale Auth Key (MUSS angepasst werden!)
+      TAILSCALE_AUTH_KEY="YOUR_TAILSCALE_AUTH_KEY_HERE"
+      
+      # Prüfen ob Auth Key gesetzt wurde
+      if [ "$TAILSCALE_AUTH_KEY" = "YOUR_TAILSCALE_AUTH_KEY_HERE" ]; then
+        echo "[$(date)] ERROR: Tailscale Auth Key wurde nicht angepasst!"
+        echo "[$(date)] Bitte den Auth Key im Cloud-Init Script setzen."
+        exit 1
+      fi
+      
+      # Tailscale mit Auth Key starten
+      echo "[$(date)] Starting Tailscale with auth key..."
+      if tailscale up --authkey="$TAILSCALE_AUTH_KEY" --hostname="devsystem-qs-vps" --accept-routes --ssh; then
+        echo "[$(date)] Tailscale successfully connected!"
+        
+        # Tailscale IP abrufen und loggen
+        TAILSCALE_IP=$(tailscale ip -4)
+        echo "[$(date)] Tailscale IP: $TAILSCALE_IP"
+        echo "$TAILSCALE_IP" > /root/tailscale-ip.txt
+        
+        # Tailscale Status ausgeben
+        tailscale status
+      else
+        echo "[$(date)] ERROR: Tailscale connection failed!"
+        exit 1
+      fi
+      
+      echo "[$(date)] Tailscale setup completed successfully"
+    permissions: '0750'
+    owner: root:root
+
+  # UFW Firewall Setup Script
+  - path: /usr/local/bin/ufw-setup.sh
+    content: |
+      #!/bin/bash
+      # UFW Firewall Setup - Nur Tailscale-Zugang erlauben
+      set -e
+      
+      LOG_FILE="/var/log/ufw-setup.log"
+      exec > >(tee -a "$LOG_FILE")
+      exec 2>&1
+      
+      echo "[$(date)] Starting UFW firewall configuration..."
+      
+      # Warten bis Tailscale-Interface verfügbar ist
+      echo "[$(date)] Waiting for Tailscale interface..."
+      for i in {1..60}; do
+        if ip link show tailscale0 &>/dev/null; then
+          echo "[$(date)] Tailscale interface found"
+          break
+        fi
+        if [ $i -eq 60 ]; then
+          echo "[$(date)] WARNING: Tailscale interface not found after 2 minutes"
+          echo "[$(date)] Proceeding with firewall setup anyway..."
+        fi
+        sleep 2
+      done
+      
+      # UFW zurücksetzen und Standardregeln setzen
+      echo "[$(date)] Resetting UFW to default state..."
+      ufw --force reset
+      
+      echo "[$(date)] Setting default policies..."
+      ufw default deny incoming
+      ufw default allow outgoing
+      
+      # WICHTIG: SSH über Tailscale erlauben (bevor wir UFW aktivieren!)
+      echo "[$(date)] Allowing SSH through Tailscale interface..."
+      ufw allow in on tailscale0 to any port 22 proto tcp comment 'SSH via Tailscale'
+      
+      # Tailscale UDP-Port für Koordination erlauben
+      echo "[$(date)] Allowing Tailscale coordination port..."
+      ufw allow 41641/udp comment 'Tailscale'
+      
+      # Alle Verbindungen über Tailscale-Interface erlauben
+      echo "[$(date)] Allowing all traffic on Tailscale interface..."
+      ufw allow in on tailscale0 comment 'Tailscale network'
+      
+      # KRITISCH: Standard SSH Port 22 von außen blockieren
+      # (bereits durch default deny abgedeckt, aber explizit dokumentieren)
+      echo "[$(date)] Default SSH port 22 is blocked from external access (default deny)"
+      
+      # UFW aktivieren
+      echo "[$(date)] Enabling UFW firewall..."
+      echo "y" | ufw enable
+      
+      # Status anzeigen
+      echo "[$(date)] UFW firewall configuration completed"
+      echo "[$(date)] Current UFW status:"
+      ufw status verbose
+      
+      echo "[$(date)] Firewall setup completed successfully"
+    permissions: '0750'
+    owner: root:root
+
+# Befehle, die nach der Paketinstallation ausgeführt werden
+runcmd:
+  # === SYSTEM VORBEREITUNG ===
+  - echo "==================================================="
+  - echo "DevSystem QS-VPS Cloud-Init Starting..."
+  - echo "==================================================="
+  - date
+
+  # Hostname persistent setzen
+  - hostnamectl set-hostname devsystem-qs-vps
+  - echo "127.0.1.1 devsystem-qs-vps" >> /etc/hosts
+
+  # Kernel-Sicherheitsparameter anwenden
+  - sysctl -p /etc/sysctl.d/99-devsystem-security.conf
+
+  # === TAILSCALE INSTALLATION ===
+  - echo "Installing Tailscale..."
+  
+  # Tailscale GPG-Key hinzufügen (neue Methode mit signed-by)
+  - curl -fsSL https://pkgs.tailscale.com/stable/ubuntu/jammy.noarmor.gpg | tee /usr/share/keyrings/tailscale-archive-keyring.gpg >/dev/null
+  
+  # Tailscale Repository hinzufügen
+  - echo "deb [signed-by=/usr/share/keyrings/tailscale-archive-keyring.gpg] https://pkgs.tailscale.com/stable/ubuntu jammy main" | tee /etc/apt/sources.list.d/tailscale.list
+  
+  # Paketlisten aktualisieren und Tailscale installieren
+  - apt-get update -qq
+  - apt-get install -y tailscale
+  
+  # Tailscale-Dienst starten und aktivieren
+  - systemctl enable tailscaled
+  - systemctl start tailscaled
+  
+  # Warten bis Tailscale-Dienst bereit ist
+  - sleep 5
+  
+  # Tailscale Setup ausführen
+  - bash /usr/local/bin/tailscale-setup.sh
+
+  # === FIREWALL KONFIGURATION ===
+  # WICHTIG: Wird NACH Tailscale ausgeführt, damit Tailscale-Interface existiert
+  - echo "Configuring firewall..."
+  - bash /usr/local/bin/ufw-setup.sh
+
+  # === FAIL2BAN KONFIGURATION ===
+  - echo "Configuring Fail2ban..."
+  - systemctl enable fail2ban
+  - systemctl start fail2ban
+  - systemctl status fail2ban --no-pager
+
+  # === AUDIT SYSTEM ===
+  - echo "Configuring audit system..."
+  - systemctl enable auditd
+  - systemctl restart auditd
+  - systemctl status auditd --no-pager
+
+  # === AUTOMATISCHE SICHERHEITSUPDATES ===
+  - echo "Configuring automatic security updates..."
+  - apt-get install -y unattended-upgrades
+  - dpkg-reconfigure -plow unattended-upgrades
+
+  # === ABSCHLUSS UND VALIDIERUNG ===
+  - echo "==================================================="
+  - echo "Cloud-Init Setup Completed"
+  - echo "==================================================="
+  - date
+  - echo ""
+  - echo "System Information:"
+  - echo "-------------------"
+  - echo "Hostname: $(hostname)"
+  - echo "Tailscale Status:"
+  - tailscale status || echo "Tailscale status not available"
+  - echo ""
+  - echo "Tailscale IP: $(tailscale ip -4 2>/dev/null || echo 'Not available')"
+  - echo ""
+  - echo "UFW Status:"
+  - ufw status verbose
+  - echo ""
+  - echo "==================================================="
+  - echo "Setup completed! Access via Tailscale IP only."
+  - echo "Log files:"
+  - echo "  - /var/log/cloud-init-output.log"
+  - echo "  - /var/log/tailscale-setup.log"
+  - echo "  - /var/log/ufw-setup.log"
+  - echo "==================================================="
+
+# SSH-Konfiguration härten
+ssh_pwauth: false
+disable_root: false
+ssh_authorized_keys: []
+
+# Finale Benachrichtigungen
+final_message: |
+  ================================================================
+  DevSystem QS-VPS Setup Complete!
+  ================================================================
+  
+  The system has been configured with:
+  - Tailscale VPN integration
+  - Firewall (UFW) - SSH only via Tailscale
+  - Fail2ban for brute-force protection
+  - Automatic security updates
+  - System auditing enabled
+  
+  IMPORTANT: SSH is ONLY accessible via Tailscale network!
+  
+  Access the system using:
+    ssh root@<tailscale-ip>
+  
+  Tailscale IP is logged in: /root/tailscale-ip.txt
+  
+  Cloud-Init logs: /var/log/cloud-init-output.log
+  Tailscale logs: /var/log/tailscale-setup.log
+  Firewall logs: /var/log/ufw-setup.log
+  
+  Use 'tailscale status' to verify connection.
+  ================================================================
