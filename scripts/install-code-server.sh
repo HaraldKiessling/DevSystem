@@ -1,293 +1,411 @@
 #!/bin/bash
 #
-# DevSystem - code-server Installationsskript
+# code-server Installationsskript für DevSystem
+# Dieses Skript automatisiert die Installation und Konfiguration von code-server
+# als Web-IDE auf einem Ubuntu VPS für das DevSystem Projekt.
+#
+# Version: 1.0
 # Autor: DevSystem Team
-# Datum: 2026-04-08
+# Datum: $(date +%Y-%m-%d)
 #
-# Beschreibung: 
-# Dieses Script installiert code-server (VS Code im Browser) für das DevSystem-Projekt.
-# Es führt folgende Aktionen aus:
-# - Installation der erforderlichen Abhängigkeiten
-# - Installation von code-server über das offizielle Paket
-# - Einrichtung eines systemd-Dienstes für automatischen Start
-# - Grundlegende Konfiguration von code-server
+# Funktionen:
+# - Installation von code-server auf dem Ubuntu VPS
+# - Erstellung eines dedizierten Benutzers für code-server
+# - Konfiguration für automatischen Start via systemd
+# - Erstellung der grundlegenden Verzeichnisstruktur
+# - Basis-Konfiguration (wird später vom Konfigurationsskript überschrieben)
+# - Integration mit Caddy als Reverse Proxy
 #
-# Voraussetzungen:
-# - Ubuntu-System
-# - Root-Zugriff
-# - Caddy ist bereits installiert und konfiguriert
+# Verwendung: sudo bash install-code-server.sh [--user=NAME] [--port=PORT] [--config-only]
 
-set -e # Script beenden, wenn ein Befehl fehlschlägt
-set -u # Script beenden, wenn eine Variable nicht definiert ist
+# Fehler bei der Ausführung beenden das Skript
+set -e
 
-# Farbige Ausgabe für bessere Lesbarkeit
+# Farbdefinitionen für Terminal-Ausgabe
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Funktion für Step-Nachrichten
-log_step() {
-    echo -e "${BLUE}[$(date '+%Y-%m-%d %H:%M:%S')] [STEP] $1${NC}"
+# Logging-Funktion
+log() {
+    local level=$1
+    local message=$2
+    local color=$NC
+    
+    case $level in
+        "INFO") color=$GREEN ;;
+        "WARN") color=$YELLOW ;;
+        "ERROR") color=$RED ;;
+        "STEP") color=$BLUE ;;
+    esac
+    
+    echo -e "${color}[$(date '+%Y-%m-%d %H:%M:%S')] [$level] $message${NC}"
 }
 
-# Funktion für Infos
-log_info() {
-    echo -e "${GREEN}[$(date '+%Y-%m-%d %H:%M:%S')] [INFO] $1${NC}"
-}
-
-# Funktion für Warnungen
-log_warning() {
-    echo -e "${YELLOW}[$(date '+%Y-%m-%d %H:%M:%S')] [WARN] $1${NC}"
-}
-
-# Funktion für Fehler
-log_error() {
-    echo -e "${RED}[$(date '+%Y-%m-%d %H:%M:%S')] [ERROR] $1${NC}"
-}
-
-# Prüfen, ob das Script mit Root-Rechten ausgeführt wird
-if [ "$(id -u)" != "0" ]; then
-    log_error "Dieses Script muss mit Root-Rechten ausgeführt werden."
+# Fehlermeldung und Exit-Funktion
+error_exit() {
+    log "ERROR" "$1"
     exit 1
-fi
+}
 
-# Standardwerte für Konfigurationsparameter
-CODE_SERVER_VERSION="4.14.1"
-CODE_SERVER_PORT="8080"
-CODE_SERVER_USER="coder"
-CODE_SERVER_PASSWORD=""
-CODE_SERVER_BIND_ADDR="127.0.0.1"
-CODE_SERVER_CONFIG_DIR="/etc/code-server"
-CODE_SERVER_DATA_DIR="/var/lib/code-server"
-CODE_SERVER_AUTH="password"
-CREATE_USER=true
+# Root-Berechtigungen prüfen
+check_root() {
+    if [ "$(id -u)" -ne 0 ]; then
+        error_exit "Dieses Skript muss als Root ausgeführt werden. Bitte verwenden Sie 'sudo'."
+    fi
+}
 
 # Kommandozeilenargumente parsen
-while [[ "$#" -gt 0 ]]; do
-    case $1 in
-        --version=*) CODE_SERVER_VERSION="${1#*=}"; shift ;;
-        --port=*) CODE_SERVER_PORT="${1#*=}"; shift ;;
-        --user=*) CODE_SERVER_USER="${1#*=}"; shift ;;
-        --password=*) CODE_SERVER_PASSWORD="${1#*=}"; shift ;;
-        --bind-addr=*) CODE_SERVER_BIND_ADDR="${1#*=}"; shift ;;
-        --config-dir=*) CODE_SERVER_CONFIG_DIR="${1#*=}"; shift ;;
-        --data-dir=*) CODE_SERVER_DATA_DIR="${1#*=}"; shift ;;
-        --auth=*) CODE_SERVER_AUTH="${1#*=}"; shift ;;
-        --no-create-user) CREATE_USER=false; shift ;;
-        --help) 
-            echo "Verwendung: $0 [Optionen]"
-            echo "Optionen:"
-            echo "  --version=VERSION       Version von code-server (Standard: $CODE_SERVER_VERSION)"
-            echo "  --port=PORT             Port für code-server (Standard: $CODE_SERVER_PORT)"
-            echo "  --user=USER             Benutzername für code-server (Standard: $CODE_SERVER_USER)"
-            echo "  --password=PASSWORD     Passwort für code-server (wenn --auth=password)"
-            echo "  --bind-addr=ADDR        Bind-Adresse für code-server (Standard: $CODE_SERVER_BIND_ADDR)"
-            echo "  --config-dir=DIR        Konfigurationsverzeichnis (Standard: $CODE_SERVER_CONFIG_DIR)"
-            echo "  --data-dir=DIR          Datenverzeichnis (Standard: $CODE_SERVER_DATA_DIR)"
-            echo "  --auth=TYPE             Authentifizierungstyp (password oder none) (Standard: $CODE_SERVER_AUTH)"
-            echo "  --no-create-user        Keinen Benutzer erstellen"
-            exit 0
-            ;;
-        *) log_error "Unbekannter Parameter: $1"; exit 1 ;;
-    esac
-done
+parse_args() {
+    CONFIG_ONLY=false
+    
+    for arg in "$@"; do
+        case $arg in
+            --user=*)
+                CODE_SERVER_USER="${arg#*=}"
+                ;;
+            --port=*)
+                CODE_SERVER_PORT="${arg#*=}"
+                ;;
+            --config-only)
+                CONFIG_ONLY=true
+                ;;
+            --help)
+                echo "Verwendung: sudo bash install-code-server.sh [--user=NAME] [--port=PORT] [--config-only]"
+                echo ""
+                echo "Optionen:"
+                echo "  --user=NAME       Spezifiziert den Benutzernamen für code-server (Standard: codeserver)"
+                echo "  --port=PORT       Spezifiziert den Port für code-server (Standard: 8080)"
+                echo "  --config-only     Nur Konfiguration durchführen, keine Installation"
+                echo ""
+                exit 0
+                ;;
+        esac
+    done
+    
+    # Standardwerte setzen, falls nicht angegeben
+    CODE_SERVER_USER=${CODE_SERVER_USER:-"codeserver"}
+    CODE_SERVER_PORT=${CODE_SERVER_PORT:-"8080"}
+}
 
-# Willkommensnachricht
-log_step "Starte code-server Installation für DevSystem..."
-
-# Prüfe Systemvoraussetzungen
-log_step "Prüfe Systemvoraussetzungen..."
-
-# Prüfe, ob das System auf Ubuntu basiert
-if [ ! -f /etc/os-release ] || ! grep -q "Ubuntu" /etc/os-release; then
-    log_warning "Dieses Skript wurde für Ubuntu entwickelt. Andere Systeme werden möglicherweise nicht vollständig unterstützt."
-else
-    log_info "Ubuntu-System erkannt."
-fi
+# Systemvoraussetzungen prüfen
+check_prerequisites() {
+    log "STEP" "Prüfe Systemvoraussetzungen..."
+    
+    # Prüfen, ob Ubuntu verwendet wird
+    if [ ! -f /etc/lsb-release ] || ! grep -q "Ubuntu" /etc/lsb-release; then
+        error_exit "Dieses Skript ist für Ubuntu-Systeme ausgelegt. Ihre Distribution wird nicht unterstützt."
+    fi
+    
+    # Prüfen, ob die erforderlichen Befehle installiert sind
+    for cmd in apt-get curl systemctl; do
+        if ! command -v $cmd &> /dev/null; then
+            error_exit "Der Befehl '$cmd' wird benötigt, ist aber nicht installiert."
+        fi
+    done
+    
+    # Prüfen, ob Caddy installiert ist (für Reverse Proxy)
+    if ! command -v caddy &> /dev/null; then
+        log "WARN" "Caddy scheint nicht installiert zu sein. Es wird als Reverse Proxy benötigt."
+        log "WARN" "Bitte installieren Sie Caddy zuerst mit dem install-caddy.sh Skript."
+    fi
+    
+    log "INFO" "Systemvoraussetzungen erfüllt."
+}
 
 # Prüfen, ob code-server bereits installiert ist
-if command -v code-server &> /dev/null; then
-    INSTALLED_VERSION=$(code-server --version | head -n 1 | cut -d ' ' -f 3)
-    log_warning "code-server ist bereits installiert (Version $INSTALLED_VERSION)."
-    
-    if [[ "$INSTALLED_VERSION" == "$CODE_SERVER_VERSION" ]]; then
-        log_info "Die installierte Version entspricht der angeforderten Version."
-        SKIP_INSTALL=true
+check_code_server() {
+    if command -v code-server &> /dev/null; then
+        log "WARN" "code-server ist bereits installiert. Überspringe die Installation."
+        return 0
     else
-        log_info "Die installierte Version unterscheidet sich von der angeforderten Version. Fahre mit der Installation fort."
-        SKIP_INSTALL=false
+        return 1
     fi
-else
-    SKIP_INSTALL=false
-    log_info "code-server ist noch nicht installiert. Fahre mit der Installation fort."
-fi
+}
 
-# Benutzer erstellen, falls notwendig
-if [ "$CREATE_USER" = true ] && ! id -u "$CODE_SERVER_USER" &>/dev/null; then
-    log_step "Erstelle Benutzer '$CODE_SERVER_USER' für code-server..."
-    useradd -m -s /bin/bash "$CODE_SERVER_USER"
-    log_info "Benutzer '$CODE_SERVER_USER' wurde erstellt."
-fi
-
-# Installiere Abhängigkeiten
-log_step "Installiere Abhängigkeiten..."
-apt-get update
-apt-get install -y curl wget unzip git build-essential openssl
-
-# Verzeichnisse erstellen
-log_step "Erstelle Verzeichnisstruktur..."
-mkdir -p "$CODE_SERVER_CONFIG_DIR"
-mkdir -p "$CODE_SERVER_DATA_DIR"
-
-# Führe die Installation nur durch, wenn sie nicht übersprungen werden soll
-if [ "$SKIP_INSTALL" = false ]; then
-    log_step "Installiere code-server Version $CODE_SERVER_VERSION..."
+# Dedizierten Benutzer für code-server erstellen
+create_user() {
+    log "STEP" "Erstelle dedizierten Benutzer für code-server..."
     
-    # Downloading and installing code-server
-    cd /tmp
-    wget -q "https://github.com/coder/code-server/releases/download/v$CODE_SERVER_VERSION/code-server_${CODE_SERVER_VERSION}_amd64.deb"
-    
-    if [ $? -eq 0 ]; then
-        log_info "Download von code-server Version $CODE_SERVER_VERSION erfolgreich."
-        
-        # Install the Debian package
-        dpkg -i "code-server_${CODE_SERVER_VERSION}_amd64.deb"
-        
-        if [ $? -eq 0 ]; then
-            log_info "Installation von code-server Version $CODE_SERVER_VERSION erfolgreich."
-            
-            # Lösche die Installationsdatei
-            rm "code-server_${CODE_SERVER_VERSION}_amd64.deb"
-        else
-            log_error "Installation von code-server ist fehlgeschlagen."
-            exit 1
-        fi
+    # Prüfen, ob der Benutzer bereits existiert
+    if id "$CODE_SERVER_USER" &>/dev/null; then
+        log "WARN" "Benutzer '$CODE_SERVER_USER' existiert bereits. Überspringe Benutzererstellung."
     else
-        log_error "Download von code-server ist fehlgeschlagen."
-        exit 1
+        log "INFO" "Erstelle Benutzer '$CODE_SERVER_USER'..."
+        
+        # Benutzer mit Home-Verzeichnis erstellen
+        useradd -m -s /bin/bash "$CODE_SERVER_USER" || error_exit "Fehler beim Erstellen des Benutzers '$CODE_SERVER_USER'."
+        
+        log "INFO" "Benutzer '$CODE_SERVER_USER' erfolgreich erstellt."
     fi
-else
-    log_info "Installation von code-server wird übersprungen, da bereits installiert."
-fi
+}
 
-# Konfiguration erstellen
-log_step "Erstelle code-server Konfiguration..."
+# code-server installieren
+install_code_server() {
+    log "STEP" "Installiere code-server..."
+    
+    # Aktualisieren der Paketlisten
+    log "INFO" "Aktualisiere Paketlisten..."
+    apt-get update -y || error_exit "Fehler beim Aktualisieren der Paketlisten."
+    
+    # Installation der erforderlichen Abhängigkeiten
+    log "INFO" "Installiere erforderliche Abhängigkeiten..."
+    apt-get install -y curl wget unzip git build-essential || error_exit "Fehler bei der Installation von Abhängigkeiten."
+    
+    # Installation von code-server über das offizielle Installationsskript
+    log "INFO" "Lade und führe code-server Installationsskript aus..."
+    curl -fsSL https://code-server.dev/install.sh | sh || error_exit "Fehler bei der Installation von code-server."
+    
+    log "INFO" "code-server erfolgreich installiert."
+}
 
-# Generiere ein zufälliges Passwort, wenn keines angegeben wurde und Authentifizierung auf Passwort gesetzt ist
-if [[ "$CODE_SERVER_AUTH" == "password" && -z "$CODE_SERVER_PASSWORD" ]]; then
-    CODE_SERVER_PASSWORD=$(openssl rand -base64 12)
-    log_info "Zufälliges Passwort generiert: $CODE_SERVER_PASSWORD"
-    log_warning "Bitte notieren Sie dieses Passwort, da es später nicht mehr angezeigt wird!"
-fi
+# Verzeichnisstruktur erstellen
+create_directory_structure() {
+    log "STEP" "Erstelle code-server-Verzeichnisstruktur..."
+    
+    # Home-Verzeichnis des Benutzers
+    USER_HOME="/home/$CODE_SERVER_USER"
+    
+    # Erstelle Hauptverzeichnisse
+    mkdir -p "$USER_HOME/.config/code-server"
+    mkdir -p "$USER_HOME/.config/code-server/data"
+    mkdir -p "$USER_HOME/.config/code-server/data/User"
+    mkdir -p "$USER_HOME/.config/code-server/data/extensions"
+    mkdir -p "$USER_HOME/.config/code-server/logs"
+    mkdir -p "$USER_HOME/workspaces"
+    mkdir -p "$USER_HOME/workspaces/DevSystem"
+    
+    # Setze Berechtigungen
+    chown -R "$CODE_SERVER_USER:$CODE_SERVER_USER" "$USER_HOME/.config"
+    chown -R "$CODE_SERVER_USER:$CODE_SERVER_USER" "$USER_HOME/workspaces"
+    
+    log "INFO" "Verzeichnisstruktur erfolgreich erstellt."
+}
 
-# Erstelle Konfigurationsdatei
-cat > "$CODE_SERVER_CONFIG_DIR/config.yaml" << EOF
-bind-addr: ${CODE_SERVER_BIND_ADDR}:${CODE_SERVER_PORT}
-auth: ${CODE_SERVER_AUTH}
-password: ${CODE_SERVER_PASSWORD}
+# Basis-Konfiguration erstellen
+create_base_config() {
+    log "STEP" "Erstelle Basis-Konfiguration für code-server..."
+    
+    USER_HOME="/home/$CODE_SERVER_USER"
+    CONFIG_FILE="$USER_HOME/.config/code-server/config.yaml"
+    
+    # Erstellen der Basis-Konfigurationsdatei
+    cat > "$CONFIG_FILE" << EOF
+# code-server Basis-Konfiguration für DevSystem
+# Diese Konfiguration wird später vom configure-code-server.sh Skript überschrieben
+bind-addr: 127.0.0.1:$CODE_SERVER_PORT
+auth: password
+password: changeme
 cert: false
-user-data-dir: ${CODE_SERVER_DATA_DIR}/user-data
-extensions-dir: ${CODE_SERVER_DATA_DIR}/extensions
-disable-telemetry: true
-disable-update-check: true
-app-name: "DevSystem"
-log: debug
+user-data-dir: $USER_HOME/.config/code-server/data
 EOF
+    
+    # Berechtigungen setzen
+    chown "$CODE_SERVER_USER:$CODE_SERVER_USER" "$CONFIG_FILE"
+    chmod 600 "$CONFIG_FILE"
+    
+    log "INFO" "Basis-Konfiguration erstellt."
+    log "WARN" "Das Standard-Passwort 'changeme' sollte später geändert werden!"
+}
 
-# Setze Berechtigungen
-chown -R "$CODE_SERVER_USER":"$CODE_SERVER_USER" "$CODE_SERVER_CONFIG_DIR"
-chown -R "$CODE_SERVER_USER":"$CODE_SERVER_USER" "$CODE_SERVER_DATA_DIR"
-chmod 600 "$CODE_SERVER_CONFIG_DIR/config.yaml"
-
-# Erstelle systemd-Servicedatei
-log_step "Konfiguriere systemd-Dienst für code-server..."
-
-cat > /etc/systemd/system/code-server.service << EOF
+# Systemd-Service einrichten
+configure_systemd_service() {
+    log "STEP" "Konfiguriere systemd-Service für code-server..."
+    
+    USER_HOME="/home/$CODE_SERVER_USER"
+    SERVICE_FILE="/etc/systemd/system/code-server.service"
+    
+    # Systemd-Service-Datei erstellen
+    cat > "$SERVICE_FILE" << EOF
 [Unit]
-Description=code-server VS Code in browser
+Description=code-server Web IDE for DevSystem
+Documentation=https://github.com/coder/code-server
 After=network.target
 
 [Service]
-User=${CODE_SERVER_USER}
-Group=${CODE_SERVER_USER}
-WorkingDirectory=/home/${CODE_SERVER_USER}
-EnvironmentFile=-/etc/code-server/environment
-ExecStart=/usr/bin/code-server --config ${CODE_SERVER_CONFIG_DIR}/config.yaml
+Type=exec
+User=$CODE_SERVER_USER
+Group=$CODE_SERVER_USER
+WorkingDirectory=$USER_HOME
+ExecStart=/usr/bin/code-server --config $USER_HOME/.config/code-server/config.yaml
 Restart=always
 RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+# Sicherheitseinstellungen
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=$USER_HOME/.config/code-server $USER_HOME/workspaces
+
+# Ressourcenlimits
+LimitNOFILE=65536
+LimitNPROC=4096
 
 [Install]
 WantedBy=multi-user.target
 EOF
+    
+    log "INFO" "Systemd-Service-Datei erstellt."
+    
+    # Systemd neu laden
+    systemctl daemon-reload || error_exit "Fehler beim Neuladen von systemd."
+    
+    # Service aktivieren (Auto-Start)
+    log "INFO" "Aktiviere code-server-Service für automatischen Start..."
+    systemctl enable code-server || error_exit "Fehler beim Aktivieren des code-server-Dienstes."
+    
+    log "INFO" "Systemd-Service erfolgreich konfiguriert."
+}
 
-# Erstelle environment-Datei für zusätzliche Umgebungsvariablen
-cat > "$CODE_SERVER_CONFIG_DIR/environment" << EOF
-# Umgebungsvariablen für code-server
-SHELL=/bin/bash
-NODE_PATH=
-PATH=/usr/local/bin:/usr/bin:/bin
-EOF
+# Service starten
+start_service() {
+    log "STEP" "Starte code-server-Service..."
+    
+    # Service starten
+    if systemctl start code-server; then
+        log "INFO" "code-server-Service erfolgreich gestartet."
+    else
+        log "ERROR" "Fehler beim Starten des code-server-Dienstes."
+        log "INFO" "Überprüfen Sie die Logs mit: journalctl -u code-server -n 50"
+        return 1
+    fi
+    
+    # Kurz warten, damit der Service hochfahren kann
+    sleep 3
+    
+    # Service-Status prüfen
+    if systemctl is-active --quiet code-server; then
+        log "INFO" "code-server-Service läuft."
+    else
+        log "WARN" "code-server-Service scheint nicht zu laufen."
+        log "INFO" "Status: $(systemctl is-active code-server)"
+    fi
+}
 
-# Systemd neu laden und Dienst aktivieren
-systemctl daemon-reload
-systemctl enable code-server.service
+# Verifiziere die Installation
+verify_installation() {
+    log "STEP" "Verifiziere die code-server-Installation..."
+    
+    # Prüfen, ob code-server installiert ist
+    if ! command -v code-server &> /dev/null; then
+        log "ERROR" "code-server wurde nicht gefunden. Installation fehlgeschlagen."
+        return 1
+    fi
+    
+    # code-server-Version prüfen
+    log "INFO" "code-server-Version:"
+    code-server --version || log "WARN" "Konnte Version nicht abrufen."
+    
+    # Prüfen, ob der Service läuft
+    if ! systemctl is-active --quiet code-server; then
+        log "WARN" "code-server-Service läuft nicht."
+        log "INFO" "Versuche Service-Status abzurufen..."
+        systemctl status code-server --no-pager || true
+        return 1
+    fi
+    
+    # Prüfen, ob code-server auf dem konfigurierten Port lauscht
+    log "INFO" "Prüfe, ob code-server auf Port $CODE_SERVER_PORT lauscht..."
+    if ss -tlnp | grep -q ":$CODE_SERVER_PORT"; then
+        log "INFO" "code-server lauscht auf Port $CODE_SERVER_PORT."
+    else
+        log "WARN" "code-server scheint nicht auf Port $CODE_SERVER_PORT zu lauschen."
+        log "INFO" "Aktive Ports:"
+        ss -tlnp | grep code-server || log "WARN" "Keine code-server Ports gefunden."
+    fi
+    
+    log "INFO" "Verifizierung abgeschlossen."
+    return 0
+}
 
-# Dienst starten
-log_step "Starte code-server Dienst..."
-systemctl restart code-server.service
+# Zusätzliche hilfreiche Informationen anzeigen
+show_info() {
+    echo ""
+    log "STEP" "Installation abgeschlossen!"
+    echo ""
+    echo -e "${GREEN}code-server wurde erfolgreich installiert und konfiguriert.${NC}"
+    echo ""
+    echo "Konfigurationsdetails:"
+    echo "  - Benutzer:                     $CODE_SERVER_USER"
+    echo "  - Port:                         $CODE_SERVER_PORT (localhost only)"
+    echo "  - Bind-Address:                 127.0.0.1:$CODE_SERVER_PORT"
+    echo "  - Home-Verzeichnis:             /home/$CODE_SERVER_USER"
+    echo "  - Konfigurationsdatei:          /home/$CODE_SERVER_USER/.config/code-server/config.yaml"
+    echo "  - Workspace-Verzeichnis:        /home/$CODE_SERVER_USER/workspaces"
+    echo ""
+    echo "Nützliche Befehle:"
+    echo "  - Status anzeigen:              sudo systemctl status code-server"
+    echo "  - Service starten:              sudo systemctl start code-server"
+    echo "  - Service stoppen:              sudo systemctl stop code-server"
+    echo "  - Service neu starten:          sudo systemctl restart code-server"
+    echo "  - Logs anzeigen:                sudo journalctl -u code-server -f"
+    echo "  - Logs (letzte 50 Zeilen):      sudo journalctl -u code-server -n 50"
+    echo ""
+    echo "Nächste Schritte:"
+    echo "  1. Führen Sie das Konfigurationsskript aus: sudo bash scripts/configure-code-server.sh"
+    echo "  2. Konfigurieren Sie Caddy als Reverse Proxy (falls noch nicht geschehen)"
+    echo "  3. Greifen Sie auf code-server über Tailscale zu: https://code.devsystem.internal"
+    echo ""
+    echo -e "${YELLOW}WICHTIG: Das Standard-Passwort 'changeme' muss geändert werden!${NC}"
+    echo -e "${YELLOW}Bearbeiten Sie: /home/$CODE_SERVER_USER/.config/code-server/config.yaml${NC}"
+    echo ""
+    echo "Weitere Informationen finden Sie in der offiziellen Dokumentation:"
+    echo "  https://coder.com/docs/code-server"
+    echo ""
+}
 
-# Prüfe, ob der Dienst erfolgreich gestartet wurde
-if systemctl is-active --quiet code-server.service; then
-    log_info "code-server Dienst ist aktiv."
-else
-    log_error "code-server Dienst konnte nicht gestartet werden. Prüfe die Logs mit 'journalctl -u code-server'."
-    exit 1
-fi
+# Hauptfunktion
+main() {
+    log "STEP" "Starte code-server-Installation für DevSystem..."
+    
+    # Prüfungen
+    check_root
+    parse_args "$@"
+    check_prerequisites
+    
+    # Installation, wenn code-server noch nicht installiert ist
+    if [ "$CONFIG_ONLY" != "true" ]; then
+        if ! check_code_server; then
+            # Benutzer erstellen
+            create_user
+            
+            # code-server installieren
+            install_code_server
+        else
+            log "INFO" "code-server ist bereits installiert. Überspringe Installation."
+        fi
+    else
+        log "INFO" "Überspringe Installation, nur Konfiguration wird durchgeführt."
+        
+        # Benutzer muss existieren für Konfiguration
+        if ! id "$CODE_SERVER_USER" &>/dev/null; then
+            create_user
+        fi
+    fi
+    
+    # Konfigurationen
+    create_directory_structure
+    create_base_config
+    configure_systemd_service
+    
+    # Service starten
+    start_service
+    
+    # Verifizieren und abschließen
+    if verify_installation; then
+        show_info
+        log "INFO" "code-server-Installation und -Konfiguration erfolgreich abgeschlossen."
+    else
+        log "ERROR" "Verifizierung fehlgeschlagen. Bitte überprüfen Sie die Logs."
+        log "INFO" "Logs anzeigen mit: sudo journalctl -u code-server -n 50"
+        exit 1
+    fi
+}
 
-# Überprüfen, ob code-server auf dem konfigurierten Port lauscht
-sleep 5
-if ss -tuln | grep -q ":$CODE_SERVER_PORT "; then
-    log_info "code-server läuft und lauscht auf Port $CODE_SERVER_PORT."
-else
-    log_warning "code-server lauscht nicht auf Port $CODE_SERVER_PORT. Bitte überprüfe die Konfiguration."
-fi
-
-# Installation von nützlichen VS Code Extensions
-log_step "Installiere nützliche VS Code Extensions..."
-
-CODE_SERVER_EXTENSIONS=(
-    "ms-python.python" 
-    "ms-azuretools.vscode-docker" 
-    "redhat.vscode-yaml" 
-    "dbaeumer.vscode-eslint"
-)
-
-for ext in "${CODE_SERVER_EXTENSIONS[@]}"; do
-    log_info "Installiere Extension $ext..."
-    sudo -u $CODE_SERVER_USER code-server --install-extension $ext
-done
-
-# Zusammenfassung
-log_step "Installation von code-server abgeschlossen"
-log_info "code-server Version: $CODE_SERVER_VERSION"
-log_info "Benutzer: $CODE_SERVER_USER"
-log_info "Bind-Adresse: $CODE_SERVER_BIND_ADDR:$CODE_SERVER_PORT"
-log_info "Authentifizierungsmethode: $CODE_SERVER_AUTH"
-log_info "Konfigurationsverzeichnis: $CODE_SERVER_CONFIG_DIR"
-log_info "Datenverzeichnis: $CODE_SERVER_DATA_DIR"
-
-log_info "Zugriff über: http://$CODE_SERVER_BIND_ADDR:$CODE_SERVER_PORT"
-log_info "Zugriff über Caddy: https://code.devsystem.internal:9443"
-
-log_info "code-server systemd service: code-server.service"
-log_info "Logs anzeigen mit: journalctl -u code-server"
-
-if [[ "$CODE_SERVER_AUTH" == "password" && -n "$CODE_SERVER_PASSWORD" ]]; then
-    log_info "Authentifizierungsdaten:"
-    log_info "  Passwort: $CODE_SERVER_PASSWORD"
-fi
-
-log_info "Installation erfolgreich abgeschlossen!"
-exit 0
+# Skript ausführen
+main "$@"
