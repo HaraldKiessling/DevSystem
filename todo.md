@@ -6,15 +6,6 @@ Aufbau eines reproduzierbaren, cloudbasierten Entwicklungssystems auf einem IONO
 
 ## Aktive Aufgaben (MVP)
 
-### Caddy-Implementierung
-
-- [Branch Open] Feature-Branch für Caddy erstellt (feature/caddy-setup)
-- [Branch Open] Caddy-Installationsskript entwickelt (install-caddy.sh)
-- [Todo] Caddy-Konfigurationsskript entwickeln
-- [Todo] E2E-Tests für Caddy entwickeln
-- [Todo] Caddy-Skripte auf dem VPS ausführen
-- [Todo] E2E-Tests für Caddy durchführen
-
 ### code-server-Implementierung
 
 - [Todo] Feature-Branch für code-server erstellen
@@ -44,6 +35,18 @@ Aufbau eines reproduzierbaren, cloudbasierten Entwicklungssystems auf einem IONO
 - [Merged] Tailscale-Skripte auf dem VPS ausgeführt
 - [Merged] E2E-Tests für Tailscale durchgeführt
 - [Merged] Probleme mit Tailscale behoben
+
+### Caddy-Implementierung
+
+- [Merged] Caddy-Installationsskript entwickelt (install-caddy.sh)
+- [Merged] Caddy-Konfigurationsskript entwickelt (configure-caddy.sh)
+- [Merged] E2E-Tests für Caddy entwickelt (test-caddy.sh)
+- [Merged] Caddy-Skripte auf dem VPS ausgeführt
+- [Merged] E2E-Tests für Caddy durchgeführt (18/19 erfolgreich)
+- [Merged] Caddy läuft auf Port 9443 mit TLS/HTTPS
+- [Merged] Reverse Proxy für code-server konfiguriert
+- [Merged] Automatisierung (Monitoring, Zertifikatserneuerung) eingerichtet
+- [Merged] Dokumentation erstellt (vps-deployment-caddy.md, caddy-e2e-validation.md)
 
 ## Offene Entscheidungen
 
