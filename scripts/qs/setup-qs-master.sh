@@ -376,6 +376,9 @@ run_component() {
     local start_time=$(date +%s)
     log "PROGRESS" "Starte Deployment..."
     
+    # Exportiere QS_TAILSCALE_IP explizit für Sub-Scripts (IMMER, auch wenn leer)
+    export QS_TAILSCALE_IP="${QS_TAILSCALE_IP:-}"
+    
     if bash "$comp_script" >> "$LOG_FILE" 2>&1; then
         local end_time=$(date +%s)
         local duration=$((end_time - start_time))
