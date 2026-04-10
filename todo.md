@@ -473,7 +473,7 @@ grep -A 20 "check_dependencies()" scripts/qs/setup-qs-master.sh
 
 Diese 5 Verbesserungen lösen **alle** Probleme die während Phase 1+2 auftraten:
 
-- [ ] 01 - Branch-Cleanup-Regel hinzufügen (15 Min)
+- [x] 01 - Branch-Cleanup-Regel hinzufügen (15 Min) ✅ **ABGESCHLOSSEN 2026-04-10**
   - **Datei:** `.roo/rules/02-git-and-todo-workflow.md`
   - **Problem:** 7 von 8 Branches mussten manuell gelöscht werden
   - **Lösung:** Branch-Management-Sektion mit Cleanup-Befehlen
@@ -484,12 +484,10 @@ Diese 5 Verbesserungen lösen **alle** Probleme die während Phase 1+2 auftraten
 - [ ] 02 - E2E-Test-Flexibilität erhöhen (20 Min)
   - **Datei:** `.roo/rules/03-testing-and-decission.md`
   - **Problem:** SSH-Problem blockierte Merge 2 Tage trotz funktionierendem Code
-  - **Lösung:** Alternative Test-Strategien erlauben (Lokal + Code-Review)
-  - **Regel:** Bei VPS-Zugriffsproblemen sind umfassende lokale Tests + Dokumentation ausreichend
-  - **Mindestanforderung:** Alle lokalen Tests + Smoke-Testing dokumentiert
-  - **Begründung:** Verhindert Merge-Blockaden bei Infrastruktur-Problemen
+  - **Status:** VERSCHOBEN - Nicht Teil von Phase 1
+  - **Begründung:** Erfordert tiefere Analyse der Test-Strategie
 
-- [ ] 03 - Hotfix-Workflow definieren (15 Min)
+- [x] 03 - Hotfix-Workflow definieren (15 Min) ✅ **ABGESCHLOSSEN 2026-04-10**
   - **Datei:** `.roo/rules/02-git-and-todo-workflow.md`
   - **Problem:** Dependency-Check-Bug hatte keinen Fast-Track-Prozess
   - **Lösung:** Hotfix-Prozess mit Fast-Track-Regeln
@@ -501,8 +499,8 @@ Diese 5 Verbesserungen lösen **alle** Probleme die während Phase 1+2 auftraten
   - **Post-Merge:** E2E-Tests nachholen innerhalb 24h
   - **Begründung:** Kritische Bugs verzögerten Deployment unnötig
 
-- [ ] 04 - Post-Deployment-Checks standardisieren (30 Min)
-  - **Datei:** `.roo/rules/04-deployment-and-operations.md` (NEU erstellen)
+- [x] 04 - Post-Deployment-Checks standardisieren (30 Min) ✅ **ABGESCHLOSSEN 2026-04-10**
+  - **Datei:** `.roo/rules/04-deployment-and-operations.md` (NEU erstellt)
   - **Problem:** Keine standardisierte Validierung nach Deployment
   - **Lösung:** 5 Pflicht-Checks nach jedem Deployment:
     1. Service-Status (systemctl is-active)
@@ -512,7 +510,7 @@ Diese 5 Verbesserungen lösen **alle** Probleme die während Phase 1+2 auftraten
     5. Idempotenz-Check (zweiter Durchlauf < 10s)
   - **Begründung:** Verhindert fehlerhafte Deployments in Produktion
 
-- [ ] 05 - MVP-Ausnahmen-Prozess klären (10 Min)
+- [x] 05 - MVP-Ausnahmen-Prozess klären (10 Min) ✅ **ABGESCHLOSSEN 2026-04-10**
   - **Datei:** `.roo/rules/02-git-and-todo-workflow.md`
   - **Problem:** Phase 3 (GitHub Actions) ist nicht MVP, wurde aber trotzdem umgesetzt
   - **Lösung:** Klare Kriterien für Post-MVP-Features:
@@ -522,7 +520,8 @@ Diese 5 Verbesserungen lösen **alle** Probleme die während Phase 1+2 auftraten
     - User hat explizit zugestimmt
   - **Begründung:** Klarheit bei Feature-Priorisierung
 
-- [ ] 05.1 - Doku-Commit-Regel hinzufügen (10 Min, .roo/rules/02-git-and-todo-workflow.md)
+- [x] 05.1 - Doku-Commit-Regel hinzufügen (10 Min) ✅ **ABGESCHLOSSEN 2026-04-10**
+  - **Datei:** `.roo/rules/02-git-and-todo-workflow.md`
   - **Problem:** Änderungen an Dokumentation (todo.md, Konzepte, Reports) werden oft nicht sofort committed
   - **Lösung:** Explizite Regel: "Nach jeder Änderung an Dokumentations-Dateien (*.md) muss sofort committed und gepusht werden"
   - **Betroffene Dateien:** todo.md, plans/*.md, Status-Reports, Anleitungen
