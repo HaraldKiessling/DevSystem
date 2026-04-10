@@ -466,20 +466,42 @@ install_extensions() {
     
     log_step "Installiere VS Code Extensions für QS-VPS..."
     
+    # Hole Liste der bereits installierten Extensions (pipefail-safe)
+    local installed_extensions
+    installed_extensions=$(su - "${CODE_SERVER_USER}" -c "code-server --list-extensions" 2>/dev/null || true)
+    
     local installed_count=0
+    local skipped_count=0
     local failed_count=0
     local failed_extensions=()
     
     for ext in "${EXTENSIONS[@]}"; do
+        # Prüfe ob Extension bereits installiert ist
+        if echo "$installed_extensions" | grep -q "^${ext}$"; then
+            log_success "  ✓ ${ext} bereits installiert (überspringe)"
+            ((skipped_count++))
+            ((installed_count++))
+            continue
+        fi
+        
         log_message "Installiere Extension: ${ext}"
         
+        # Installation mit explizitem Error-Handling (pipefail-safe)
         if su - "${CODE_SERVER_USER}" -c "code-server --install-extension ${ext} --force" >> "$QS_LOG_FILE" 2>&1; then
-            log_success "  ✓ ${ext} installiert"
+            log_success "  ✓ ${ext} erfolgreich installiert"
             ((installed_count++))
         else
-            log_warning "  ✗ ${ext} konnte nicht installiert werden"
-            failed_extensions+=("${ext}")
-            ((failed_count++))
+            # Bei Fehler: Prüfe ob Extension trotzdem installiert wurde (race condition)
+            local recheck_extensions
+            recheck_extensions=$(su - "${CODE_SERVER_USER}" -c "code-server --list-extensions" 2>/dev/null || true)
+            if echo "$recheck_extensions" | grep -q "^${ext}$"; then
+                log_success "  ✓ ${ext} installiert (trotz warning)"
+                ((installed_count++))
+            else
+                log_warning "  ✗ ${ext} konnte nicht installiert werden"
+                failed_extensions+=("${ext}")
+                ((failed_count++))
+            fi
         fi
     done
     
@@ -487,11 +509,13 @@ install_extensions() {
     idempotency::set_marker "code_server_qs_extensions_installed"
     
     # State speichern
-    idempotency::save_state "code_server_qs_extensions" "installed=${installed_count} failed=${failed_count}"
+    idempotency::save_state "code_server_qs_extensions" "installed=${installed_count} skipped=${skipped_count} failed=${failed_count}"
     
     echo ""
     log_success "Extensions-Installation abgeschlossen:"
-    log_message "  • Erfolgreich installiert: ${installed_count}"
+    log_message "  • Erfolgreich installiert: $((installed_count - skipped_count))"
+    log_message "  • Bereits vorhanden: ${skipped_count}"
+    log_message "  • Gesamt aktiv: ${installed_count}"
     
     if [ $failed_count -gt 0 ]; then
         log_warning "  • Fehlgeschlagen: ${failed_count}"
