@@ -5,6 +5,7 @@
 # Zweck:
 #   Installation von Caddy als Reverse Proxy auf dem QS-VPS
 #   Angepasste Version für den Quality-Server mit QS-spezifischen Einstellungen
+#   Mit integrierter Idempotenz-Library für wiederholbare Deployments
 #
 # Voraussetzungen:
 #   - Ubuntu System
@@ -14,12 +15,20 @@
 # Parameter:
 #   --hostname=NAME     Hostname (Standard: devsystem-qs-vps)
 #   --config-only       Nur Konfiguration, keine Installation
+#   --force             Force-Redeploy (ignoriert bestehende Marker)
 #
 # Verwendung:
-#   sudo bash install-caddy-qs.sh [--hostname=devsystem-qs-vps]
+#   sudo bash install-caddy-qs.sh [--hostname=devsystem-qs-vps] [--force]
 #
 
 set -euo pipefail
+
+# ============================================================================
+# IDEMPOTENZ-LIBRARY LADEN
+# ============================================================================
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/lib/idempotency.sh"
 
 # ============================================================================
 # KONFIGURATION UND KONSTANTEN
@@ -36,6 +45,7 @@ readonly NC='\033[0m'
 # QS-spezifische Einstellungen
 readonly QS_LOG_FILE="/var/log/qs-deployment.log"
 readonly QS_MARKER="QS-VPS"
+readonly COMPONENT_NAME="caddy"
 
 # Logging-Funktion mit QS-Marker
 log() {
@@ -69,6 +79,7 @@ check_root() {
 # Kommandozeilenargumente parsen
 parse_args() {
     CONFIG_ONLY=false
+    export FORCE_REDEPLOY=false
     
     for arg in "$@"; do
         case $arg in
@@ -78,12 +89,17 @@ parse_args() {
             --config-only)
                 CONFIG_ONLY=true
                 ;;
+            --force)
+                export FORCE_REDEPLOY=true
+                log "WARN" "Force-Redeploy aktiviert - bestehende Marker werden ignoriert"
+                ;;
             --help)
-                echo "Verwendung: sudo bash install-caddy-qs.sh [--hostname=NAME] [--config-only]"
+                echo "Verwendung: sudo bash install-caddy-qs.sh [--hostname=NAME] [--config-only] [--force]"
                 echo ""
                 echo "Optionen:"
                 echo "  --hostname=NAME     Spezifiziert den QS-Hostname (Standard: devsystem-qs-vps)"
                 echo "  --config-only       Nur Konfiguration durchführen, keine Installation"
+                echo "  --force             Force-Redeploy (ignoriert bestehende Marker)"
                 echo ""
                 exit 0
                 ;;
@@ -118,72 +134,82 @@ check_prerequisites() {
     log "INFO" "Systemvoraussetzungen erfüllt."
 }
 
-# Prüfen, ob Caddy bereits installiert ist
-check_caddy() {
-    if command -v caddy &> /dev/null; then
-        log "WARN" "Caddy ist bereits installiert. Überspringe die Installation."
+# Prüfen, ob Caddy bereits installiert ist (mit State-Check)
+check_caddy_installation() {
+    if marker_exists "caddy-installed"; then
+        local installed_version=$(get_state "$COMPONENT_NAME" "version")
+        log "INFO" "Caddy ist bereits installiert (Version: $installed_version)"
         return 0
     else
         return 1
     fi
 }
 
+# Caddy Repository hinzufügen
+setup_caddy_repository() {
+    run_idempotent "caddy-repo-setup" "Caddy Repository einrichten" bash -c '
+        apt-get update -y
+        apt-get install -y debian-keyring debian-archive-keyring apt-transport-https curl
+        curl -1sLf "https://dl.cloudsmith.io/public/caddy/stable/gpg.key" | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+        curl -1sLf "https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt" | tee /etc/apt/sources.list.d/caddy-stable.list
+        apt-get update -y
+    '
+}
+
 # Caddy installieren
 install_caddy() {
     log "STEP" "Installiere Caddy auf QS-VPS..."
     
-    # Aktualisieren der Paketlisten
-    log "INFO" "Aktualisiere Paketlisten..."
-    apt-get update -y || error_exit "Fehler beim Aktualisieren der Paketlisten."
+    # Repository Setup
+    setup_caddy_repository
     
-    # Installation der erforderlichen Abhängigkeiten
-    log "INFO" "Installiere erforderliche Abhängigkeiten..."
-    apt-get install -y debian-keyring debian-archive-keyring apt-transport-https curl || error_exit "Fehler bei der Installation von Abhängigkeiten."
+    # Caddy-Paket installieren
+    run_idempotent "caddy-package-install" "Caddy-Paket installieren" bash -c '
+        apt-get install -y caddy
+    '
     
-    # Hinzufügen des Caddy-Repositorys
-    log "INFO" "Füge Caddy-Repository hinzu..."
-    curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg || error_exit "Fehler beim Hinzufügen des Caddy-GPG-Schlüssels."
-    curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /etc/apt/sources.list.d/caddy-stable.list || error_exit "Fehler beim Hinzufügen des Caddy-Repositorys."
+    # Version speichern
+    local caddy_version=$(caddy version 2>&1 | head -n1 || echo "unknown")
+    save_state "$COMPONENT_NAME" "version" "$caddy_version"
+    save_state "$COMPONENT_NAME" "install_date" "$(date -Iseconds)"
     
-    # Aktualisieren der Paketlisten mit dem neuen Repository
-    log "INFO" "Aktualisiere Paketlisten mit neuem Repository..."
-    apt-get update -y || error_exit "Fehler beim Aktualisieren der Paketlisten nach Hinzufügen des Repositorys."
+    # Gesamt-Marker setzen
+    set_marker "caddy-installed" "Caddy installed: $caddy_version"
     
-    # Installation von Caddy
-    log "INFO" "Installiere Caddy-Paket..."
-    apt-get install -y caddy || error_exit "Fehler bei der Installation von Caddy."
-    
-    log "INFO" "Caddy erfolgreich auf QS-VPS installiert."
+    log "INFO" "Caddy erfolgreich auf QS-VPS installiert: $caddy_version"
 }
 
 # Caddy Verzeichnisstruktur erstellen (QS-spezifisch)
 create_directory_structure() {
-    log "STEP" "Erstelle QS-spezifische Caddy-Verzeichnisstruktur..."
+    run_idempotent "caddy-directories" "Caddy-Verzeichnisstruktur erstellen" bash -c '
+        # Erstelle Hauptverzeichnisse mit QS-Kennzeichnung
+        mkdir -p /etc/caddy/sites
+        mkdir -p /etc/caddy/snippets
+        mkdir -p /etc/caddy/tls/tailscale
+        mkdir -p /etc/caddy/tls/local
+        mkdir -p /var/log/caddy
+        
+        # QS-Marker-Datei erstellen
+        cat > /etc/caddy/QS-ENVIRONMENT << EOF_MARKER
+QS-VPS Quality Server
+Erstellt: $(date -Iseconds)
+Hostname: '"${HOSTNAME}"'
+EOF_MARKER
+        
+        # Setze Berechtigungen
+        chown -R caddy:caddy /etc/caddy
+        chown -R caddy:caddy /var/log/caddy
+    '
     
-    # Erstelle Hauptverzeichnisse mit QS-Kennzeichnung
-    mkdir -p /etc/caddy/sites
-    mkdir -p /etc/caddy/snippets
-    mkdir -p /etc/caddy/tls/tailscale
-    mkdir -p /etc/caddy/tls/local
-    mkdir -p /var/log/caddy
-    
-    # QS-Marker-Datei erstellen
-    echo "QS-VPS Quality Server" > /etc/caddy/QS-ENVIRONMENT
-    echo "Erstellt: $(date)" >> /etc/caddy/QS-ENVIRONMENT
-    
-    # Setze Berechtigungen
-    chown -R caddy:caddy /etc/caddy
-    chown -R caddy:caddy /var/log/caddy
-    
+    save_state "$COMPONENT_NAME" "directories_created" "true"
     log "INFO" "QS-Verzeichnisstruktur erfolgreich erstellt."
 }
 
 # Konfiguration für automatischen Start
 configure_autostart() {
-    log "STEP" "Konfiguriere automatischen Start..."
-    
-    # Aktivieren des Caddy-Dienstes beim Systemstart
-    systemctl enable caddy || error_exit "Fehler beim Aktivieren des Caddy-Dienstes für den Systemstart."
+    run_idempotent "caddy-autostart" "Caddy automatischen Start konfigurieren" bash -c '
+        systemctl enable caddy
+    '
     
     log "INFO" "Automatischer Start erfolgreich konfiguriert."
 }
@@ -192,10 +218,10 @@ configure_autostart() {
 create_base_config() {
     log "STEP" "Erstelle grundlegende QS-Caddyfile-Konfiguration..."
     
-    cat > /etc/caddy/Caddyfile << EOF
+    local config_content=$(cat << EOF
 # QS-VPS Caddy Konfiguration - Quality Server Environment
 # Hostname: ${HOSTNAME}
-# Erstellt: $(date)
+# Erstellt: $(date -Iseconds)
 
 # Globale Optionen
 {
@@ -236,15 +262,42 @@ import /etc/caddy/snippets/*.caddy
 # Site-Konfigurationen importieren
 import /etc/caddy/sites/*.caddy
 EOF
+)
     
-    log "INFO" "Grundlegende QS-Caddyfile-Konfiguration erstellt."
+    local config_file="/etc/caddy/Caddyfile"
+    local current_checksum=""
+    local new_checksum=""
+    
+    # Checksum berechnen falls Datei existiert
+    if [ -f "$config_file" ]; then
+        current_checksum=$(file_checksum "$config_file")
+    fi
+    
+    # Neue Checksum berechnen
+    new_checksum=$(echo "$config_content" | sha256sum | cut -d' ' -f1)
+    
+    # Nur aktualisieren wenn sich etwas geändert hat
+    if [ "$current_checksum" != "$new_checksum" ]; then
+        # Backup erstellen
+        backup_file "$config_file" "caddy-base-config"
+        
+        # Neue Config schreiben
+        echo "$config_content" > "$config_file"
+        
+        save_state "$COMPONENT_NAME" "base_config_checksum" "$new_checksum"
+        save_state "$COMPONENT_NAME" "base_config_updated" "$(date -Iseconds)"
+        
+        set_marker "caddy-base-config" "Base Caddyfile created"
+        log "INFO" "Grundlegende QS-Caddyfile-Konfiguration erstellt/aktualisiert."
+    else
+        log "INFO" "QS-Caddyfile-Konfiguration unverändert, überspringe Aktualisierung."
+    fi
 }
 
 # Sicherheitskonfiguration erstellen
 create_security_config() {
-    log "STEP" "Erstelle Sicherheitskonfiguration..."
-    
-    cat > /etc/caddy/snippets/security-headers.caddy << 'EOF'
+    run_idempotent "caddy-security-config" "Sicherheitskonfiguration erstellen" bash -c '
+        cat > /etc/caddy/snippets/security-headers.caddy << '\''EOF_SEC'\''
 # Benanntes Snippet für Security-Headers (QS-VPS)
 (security_headers) {
     header {
@@ -257,7 +310,8 @@ create_security_config() {
         -Server
     }
 }
-EOF
+EOF_SEC
+    '
     
     log "INFO" "Sicherheitskonfiguration erfolgreich erstellt."
 }
@@ -267,20 +321,69 @@ verify_installation() {
     log "STEP" "Verifiziere die Caddy-Installation..."
     
     # Caddy-Version prüfen
-    log "INFO" "Caddy-Version:"
-    caddy version | tee -a "$QS_LOG_FILE"
+    if command -v caddy &> /dev/null; then
+        local version=$(caddy version 2>&1 | head -n1)
+        log "INFO" "Caddy-Version: $version"
+    else
+        error_exit "Caddy-Befehl nicht gefunden nach Installation!"
+    fi
     
     # Caddyfile validieren
     log "INFO" "Validiere Caddyfile..."
     if caddy validate --config /etc/caddy/Caddyfile 2>&1 | tee -a "$QS_LOG_FILE"; then
         log "INFO" "Caddyfile ist gültig."
+        set_marker "caddy-validated" "Caddyfile validation successful"
     else
         log "ERROR" "Caddyfile enthält Fehler."
         return 1
     fi
     
+    # Systemd-Service prüfen
+    if systemctl is-enabled caddy &> /dev/null; then
+        log "INFO" "Caddy-Service ist aktiviert."
+    else
+        log "WARN" "Caddy-Service ist nicht aktiviert."
+    fi
+    
     log "INFO" "Verifizierung abgeschlossen."
     return 0
+}
+
+# Installation-Status-Report generieren
+generate_status_report() {
+    log "STEP" "Generiere Installations-Status-Report..."
+    
+    local report_file="/var/lib/qs-deployment/reports/caddy-install-report.txt"
+    mkdir -p "$(dirname "$report_file")"
+    
+    cat > "$report_file" << EOF
+=============================================================================
+QS-VPS Caddy Installation Status Report
+=============================================================================
+Datum: $(date -Iseconds)
+Hostname: $HOSTNAME
+Component: $COMPONENT_NAME
+
+Installation Details:
+- Version: $(get_state "$COMPONENT_NAME" "version")
+- Install-Datum: $(get_state "$COMPONENT_NAME" "install_date")
+- Directories: $(get_state "$COMPONENT_NAME" "directories_created")
+- Base Config Checksum: $(get_state "$COMPONENT_NAME" "base_config_checksum")
+- Letztes Config-Update: $(get_state "$COMPONENT_NAME" "base_config_updated")
+
+Aktive Marker:
+$(list_markers | grep "^caddy" || echo "Keine")
+
+Systemd Service Status:
+$(systemctl status caddy --no-pager -l || echo "Service-Status konnte nicht abgerufen werden")
+
+Config Validation:
+$(caddy validate --config /etc/caddy/Caddyfile 2>&1 || echo "Validation fehlgeschlagen")
+
+=============================================================================
+EOF
+    
+    log "INFO" "Status-Report erstellt: $report_file"
 }
 
 # Informationen anzeigen
@@ -298,6 +401,12 @@ show_info() {
     echo "  - Sicherheits-Snippets:         /etc/caddy/snippets/"
     echo "  - QS-Marker:                    /etc/caddy/QS-ENVIRONMENT"
     echo "  - Logs:                         /var/log/qs-deployment.log"
+    echo "  - Status-Report:                /var/lib/qs-deployment/reports/caddy-install-report.txt"
+    echo ""
+    echo "Idempotenz-Status:"
+    echo "  - Marker-Directory:             $MARKER_DIR"
+    echo "  - State-Directory:              $STATE_DIR"
+    echo "  - Aktive Marker:                $(list_markers | grep "^caddy" | wc -l)"
     echo ""
     echo "Nächste Schritte:"
     echo "  1. Führe configure-caddy-qs.sh aus (mit QS_TAILSCALE_IP)"
@@ -307,7 +416,7 @@ show_info() {
 
 # Hauptfunktion
 main() {
-    log "STEP" "Starte QS-VPS Caddy-Installation..."
+    log "STEP" "Starte QS-VPS Caddy-Installation (mit Idempotenz)..."
     
     # Prüfungen
     check_root
@@ -316,14 +425,16 @@ main() {
     
     # Installation, wenn Caddy noch nicht installiert ist
     if [ "$CONFIG_ONLY" != "true" ]; then
-        if ! check_caddy; then
+        if ! check_caddy_installation; then
             install_caddy
+        else
+            log "INFO" "Caddy ist bereits installiert, überspringe Installation."
         fi
     else
         log "INFO" "Überspringe Installation, nur Konfiguration wird durchgeführt."
     fi
     
-    # Konfigurationen
+    # Konfigurationen (idempotent)
     create_directory_structure
     configure_autostart
     create_base_config
@@ -331,7 +442,11 @@ main() {
     
     # Verifizieren und abschließen
     verify_installation
+    generate_status_report
     show_info
+    
+    # Finaler Marker
+    set_marker "caddy-install-complete" "Full installation completed"
     
     log "INFO" "QS-VPS: Caddy-Installation erfolgreich abgeschlossen."
 }
