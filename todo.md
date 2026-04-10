@@ -329,66 +329,102 @@ Vollautomatisierte QS-VPS-Deployments mit idempotenten Scripts über GitHub Acti
 
 ## 🤔 Offene Entscheidungen
 
-### 🔴 KRITISCH: SSH-Zugang zum QS-VPS (100.100.221.56) - Phase 1 Blocker
+### ✅ GELÖST: SSH-Zugang zum QS-VPS - 2026-04-10
 
-**Frage:** Wie wird SSH-Zugang zum QS-VPS ermöglicht, um E2E-Tests durchzuführen?
+**Problem:** SSH-Zugang zum QS-VPS war nicht möglich.
+
+**Lösung:**
+- ✅ Korrekter Host identifiziert: `devsystem-qs-vps.tailcfea8a.ts.net` (100.82.171.88)
+- ✅ SSH funktioniert vollständig über Tailscale
+- ✅ Diagnose-Script erstellt: `scripts/qs/diagnose-ssh-vps.sh`
+- ✅ Dokumentation: [`VPS-SSH-FIX-GUIDE.md`](VPS-SSH-FIX-GUIDE.md)
+
+**Status:** Vollständig gelöst und dokumentiert
+
+---
+
+### 🔴 NEU KRITISCH: Master-Orchestrator Dependency-Check Problem
+
+**Frage:** Wie behebe ich den Dependency-Check-Fehler im Master-Orchestrator?
 
 **Hintergrund:**
-- Port 22 ist aktuell blockiert/deaktiviert auf VPS
-- E2E-Tests gegen VPS benötigen SSH für Remote-Execution
-- Alle 7 Scripts sind integriert, aber E2E-Validierung fehlt
-- Tailscale-Verbindung funktioniert (Ping erfolgreich)
-- Tailscale SSH schlägt fehl (502 Bad Gateway)
+- Master-Orchestrator schlägt beim Dependency-Check fehl
+- Fehler: "Dependency nicht erfüllt: install-caddy muss vor configure-caddy ausgeführt werden"
+- Services laufen bereits: Caddy (5h+), Qdrant (4h52min+)
+- Marker existieren in `/var/lib/qs-deployment/markers/`
+- `caddy-install-complete.complete` Marker ist vorhanden
+- Problem tritt sowohl mit als auch ohne `--force` auf
+
+**Symptome:**
+```
+[2026-04-10 11:19:45] ✅ Component erfolgreich deployed (0s)  # install-caddy
+[2026-04-10 11:19:45] ⏳ Component: Caddy konfigurieren (configure-caddy)
+[2026-04-10 11:19:45] ❌ Dependency nicht erfüllt: install-caddy muss vor configure-caddy ausgeführt werden
+```
 
 **Alternativen:**
 
-1. **SSH-Dienst auf VPS aktivieren** (EMPFOHLEN)
-   - Via alternative Zugriffsmethode (IONOS Console/VNC/Serial)
-   - `systemctl enable --now ssh` auf VPS ausführen
-   - **Pro:** Standard-Lösung, einfach zu debuggen, gut dokumentiert
-   - **Contra:** Benötigt andere Zugriffsmethode zum VPS
-   - **Zeitaufwand:** 5-10 Minuten
+1. **Dependency-Check-Logik analysieren und fixen**
+   - Master-Orchestrator `check_dependencies()` Funktion reviewen
+   - State-File vs. Marker-File Logik prüfen
+   - Erwartete Marker-Namen validieren
+   - **Pro:** Root-Cause-Fix, Problem dauerhaft gelöst
+   - **Contra:** Benötigt Code-Analyse und Testing
+   - **Zeitaufwand:** 1-2 Stunden
 
-2. **Tailscale SSH korrekt konfigurieren**
-   - `tailscale set --ssh` auf VPS ausführen
-   - Tailscale-spezifische SSH-Konfiguration
-   - **Pro:** Native Tailscale-Integration, kein offener Port nötig
-   - **Contra:** Debugging komplexer, zusätzliche Konfiguration erforderlich
-   - **Zeitaufwand:** 15-20 Minuten
-
-3. **SSH auf anderem Port laufen lassen**
-   - z.B. Port 2222 statt Standard-Port 22
-   - Test-Script anpassen: `--port=2222`
-   - **Pro:** Zusätzliche Security durch non-standard Port
-   - **Contra:** Muss erst konfiguriert werden, kein Standard
-   - **Zeitaufwand:** 10-15 Minuten
-
-4. **UFW-Regel für Tailscale-Netz hinzufügen**
-   - Port 22 nur für 100.64.0.0/10 (Tailscale) freigeben
-   - `sudo ufw allow from 100.64.0.0/10 to any port 22`
-   - **Pro:** Security, SSH nur via Tailscale erreichbar
-   - **Contra:** UFW könnte bereits korrekt sein, Problem liegt woanders
+2. **Manuelle Marker setzen**
+   - Fehlende Marker manuell erstellen
+   - `touch /var/lib/qs-deployment/markers/install-caddy.complete`
+   - **Pro:** Schnelle Lösung
+   - **Contra:** Symptom-Fix, Problem bleibt bestehen
    - **Zeitaufwand:** 5 Minuten
 
+3. **Deployment ohne Dependencies durchführen**
+   - Scripts einzeln ausführen statt via Master-Orchestrator
+   - `bash scripts/qs/install-caddy-qs.sh && bash scripts/qs/configure-caddy-qs.sh ...`
+   - **Pro:** Bypass des Problems, Deployment funktioniert
+   - **Contra:** Master-Orchestrator nicht validiert
+   - **Zeitaufwand:** 15-30 Minuten
+
+4. **Dependency-System temporär deaktivieren**
+   - Master-Orchestrator anpassen: Dependency-Check auskommentieren
+   - Nur für Testing-Zweck
+   - **Pro:** Master-Orchestrator-Flow wird getestet
+   - **Contra:** Sicherheits-Feature deaktiviert
+   - **Zeitaufwand:** 10 Minuten
+
 **Empfehlung:**
-**Option 1 + 4 kombinieren:**
-1. SSH-Dienst via IONOS Console/VNC aktivieren (`systemctl enable --now ssh`)
-2. UFW-Regel hinzufügen für Tailscale-Netz (Security)
-3. E2E-Tests durchführen und validieren
-4. Bei Erfolg: Optional auf Tailscale SSH migrieren (Option 2)
+**Option 1: Root-Cause-Analyse und Fix**
 
 **Begründung:**
-- Schnellster Weg zur Lösung (5-10 Min)
-- Standard SSH ist gut dokumentiert und debuggbar
-- UFW-Regel erhöht Security (SSH nur über Tailscale)
-- Nach erfolgreichen Tests kann auf modernere Lösung (Tailscale SSH) migriert werden
+- Dependency-System ist kritische Sicherheitsfunktion
+- Problem muss für Production-Readiness gelöst werden
+- Master-Orchestrator ist Kern-Component der Phase 2
+- Symptom-Fixes würden nur Zeit verschwenden
+- Einmalige Investition für langfristige Lösung
+
+**Nächste Debug-Schritte:**
+```bash
+# 1. State-Files prüfen
+ssh root@devsystem-qs-vps.tailcfea8a.ts.net \
+  "ls -la /var/lib/qs-deployment/state/"
+
+# 2. Marker-Files prüfen
+ssh root@devsystem-qs-vps.tailcfea8a.ts.net \
+  "cat /var/lib/qs-deployment/markers/caddy-install-complete.complete"
+
+# 3. Master-Orchestrator check_dependencies() Funktion reviewen
+grep -A 20 "check_dependencies()" scripts/qs/setup-qs-master.sh
+
+# 4. Erwartete vs. tatsächliche Marker-Namen vergleichen
+```
 
 **Impact:**
-- **Blocker für:** Phase 1 E2E-Tests (Aufgaben 25-30)
-- **Blocks:** Phase 2 Start (Master-Orchestrator benötigt validierte Scripts)
-- **Priorität:** KRITISCH - Muss vor Phase 2 gelöst sein
+- **Blocker für:** E2E-Tests (können nicht vollständig durchgeführt werden)
+- **Blocker für:** Merge in main (Git-Workflow-Regel: E2E-Tests müssen erfolgreich sein)
+- **Priorität:** KRITISCH - Muss vor Merge gelöst sein
 
-**Entscheidung:** ⏳ **Wartet auf Freigabe und Umsetzung**
+**Entscheidung:** ⏳ **In Bearbeitung - Root-Cause-Analyse erforderlich**
 
 ---
 
