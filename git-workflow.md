@@ -150,3 +150,150 @@ graph TD
     K --> L
     L --> M[Aufgabenstatus aktualisieren]
     M --> N[Ende]
+
+---
+
+## 7. Branch-Management & Cleanup
+
+### 7.1 Wann sollte ein Branch gelöscht werden?
+
+Ein Feature-Branch sollte **sofort nach erfolgreichem Merge** gelöscht werden:
+
+**Lokal löschen:**
+```bash
+git branch -d feature/name    # Safe delete (nur wenn gemergt)
+git branch -D feature/name    # Force delete
+```
+
+**Remote löschen:**
+```bash
+git push origin --delete feature/name
+```
+
+### 7.2 Periodischer Branch-Cleanup
+
+**Empfehlung:** Monatlicher oder quartalsweiser Cleanup aller gemergter Branches.
+
+**Cleanup-Workflow:**
+
+1. **Analysiere verbleibende Branches:**
+   ```bash
+   git branch -a
+   git log main..feature/branch-name --oneline
+   ```
+
+2. **Prüfe ob vollständig gemergt:**
+   ```bash
+   git diff main..feature/branch-name
+   ```
+
+3. **Lösche lokale Branches:**
+   ```bash
+   git branch -d feature/branch-1
+   git branch -d feature/branch-2
+   ```
+
+4. **Lösche Remote-Branches:**
+   ```bash
+   git push origin --delete feature/branch-1
+   git push origin --delete feature/branch-2
+   ```
+
+5. **Räume Remote-Referenzen auf:**
+   ```bash
+   git remote prune origin
+   git fetch --prune
+   ```
+
+6. **Verifiziere Ergebnis:**
+   ```bash
+   git branch -a
+   ```
+   Erwartetes Ergebnis: Nur `main` Branch (lokal + remote)
+
+### 7.3 GitHub Branch Protection & Automatisierung
+
+**Empfohlene GitHub Settings:**
+
+1. **Branch Protection Rules für `main`:**
+   - Settings → Branches → Add rule
+   - Pattern: `main`
+   - ✅ Require pull request reviews before merging
+   - ✅ Require status checks to pass before merging
+   - ✅ Require branches to be up to date before merging
+
+2. **Automatisches Branch-Cleanup:**
+   - Settings → General → "Pull Requests"
+   - ✅ Automatically delete head branches
+   - Löscht Feature-Branches automatisch nach Merge
+
+3. **Default Branch korrekt setzen:**
+   - Settings → General → "Default branch"
+   - Muss immer `main` sein
+   - **NIEMALS** ein Feature-Branch als Default
+
+### 7.4 Troubleshooting: Branch kann nicht gelöscht werden
+
+**Problem:** `refusing to delete the current branch`
+
+**Ursache:** Branch ist noch als Default-Branch auf GitHub konfiguriert.
+
+**Lösung:**
+1. Öffne: `https://github.com/USER/REPO/settings`
+2. Navigiere zu "Default branch"
+3. Ändere zu `main`
+4. Versuche Löschung erneut
+
+### 7.5 Best Practices
+
+✅ **DOs:**
+- Feature-Branches sofort nach Merge löschen
+- Kurze Lebensdauer von Feature-Branches (Tage, nicht Wochen)
+- Regelmäßiger Branch-Cleanup (monatlich/quartalsweise)
+- Klare Namenskonventionen einhalten
+- Automatisches Branch-Cleanup auf GitHub aktivieren
+
+❌ **DON'Ts:**
+- Branches "vergessen" nach Merge
+- Lange lebende Feature-Branches (>2 Wochen)
+- Feature-Branch als Default-Branch verwenden
+- Branches ohne Analyse löschen
+- Branches löschen die noch ungemergte Commits haben
+
+### 7.6 Branch-Cleanup Checklist
+
+Bei jedem Cleanup:
+
+- [ ] Alle Branches mit `git branch -a` listen
+- [ ] Für jeden Branch: Commits mit main vergleichen
+- [ ] Für jeden Branch: Änderungen mit `git diff` prüfen
+- [ ] Unfertige Aufgaben in `todo.md` dokumentieren
+- [ ] Lokale Branches löschen (`git branch -d`)
+- [ ] Remote-Branches löschen (`git push origin --delete`)
+- [ ] Remote-Referenzen aufräumen (`git remote prune origin`)
+- [ ] Ergebnis verifizieren (`git branch -a`)
+- [ ] Cleanup-Report erstellen
+- [ ] GitHub Default-Branch auf `main` prüfen
+
+---
+
+## 8. Lessons Learned aus Branch-Cleanup (2026-04-10)
+
+**Situation:** 8 Branches (1 main + 7 feature) aufgeräumt
+
+**Erkenntnisse:**
+1. ✅ Alle Feature-Branches waren vollständig gemergt
+2. ✅ Keine Datenverluste durch systematische Analyse
+3. ⚠️ GitHub Default-Branch war fälschlicherweise auf Feature-Branch gesetzt
+4. ⚠️ Branches wurden nicht zeitnah nach Merge gelöscht
+
+**Empfehlungen für die Zukunft:**
+1. **Sofortige Löschung:** Branches direkt nach erfolgreichem Merge löschen
+2. **GitHub Automation:** "Automatically delete head branches" aktivieren
+3. **Default Branch:** Regelmäßig prüfen dass Default auf `main` steht
+4. **Dokumentation:** Cleanup-Prozess im Workflow verankern
+5. **Prävention:** Single-Purpose-Branches mit kurzer Lebensdauer
+
+**Erfolgsrate:** 87,5% (7 von 8 Branches gelöscht, 1 manueller Schritt nötig)
+
+Siehe vollständigen Report: [`GIT-BRANCH-CLEANUP-REPORT.md`](GIT-BRANCH-CLEANUP-REPORT.md)

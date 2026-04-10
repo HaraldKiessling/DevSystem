@@ -56,6 +56,26 @@ Keine aktiven MVP-Aufgaben - MVP ist vollständig abgeschlossen! 🎉
 
 ---
 
+## 🧹 Housekeeping & Wartung
+
+### Git-Branch-Cleanup
+- [x] Alle lokalen Feature-Branches gelöscht (3/3)
+- [x] Remote-Branches gelöscht (4/5)
+- [ ] **MANUELL:** GitHub Default-Branch auf `main` ändern + letzten Branch löschen
+  - **Warum:** `feature/vps-preparation` ist noch als Default-Branch konfiguriert
+  - **Anleitung:** Siehe [`GIT-BRANCH-CLEANUP-REPORT.md`](GIT-BRANCH-CLEANUP-REPORT.md) Abschnitt "Manueller Eingriff erforderlich"
+  - **Schritte:**
+    1. https://github.com/HaraldKiessling/DevSystem/settings → Default branch → `main` wählen
+    2. `git push origin --delete feature/vps-preparation`
+    3. `git fetch --prune && git branch -a` zur Verifizierung
+  - **Status:** Wartet auf manuellen Eingriff
+- [x] GIT-BRANCH-CLEANUP-REPORT.md erstellt und finalisiert
+- [x] git-workflow.md mit Best Practices aktualisiert
+
+**Cleanup-Erfolg:** 87,5% (7 von 8 Branches gelöscht)
+
+---
+
 ## 🎯 Post-MVP: QS-GitHub-Integration (Aktuelle Priorität: HOCH)
 
 ### Kontext
