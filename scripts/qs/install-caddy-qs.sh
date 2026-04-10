@@ -196,9 +196,13 @@ Erstellt: $(date -Iseconds)
 Hostname: '"${HOSTNAME}"'
 EOF_MARKER
         
-        # Setze Berechtigungen
-        chown -R caddy:caddy /etc/caddy
-        chown -R caddy:caddy /var/log/caddy
+        # Setze Berechtigungen nur wenn caddy-User existiert
+        if id caddy &>/dev/null; then
+            chown -R caddy:caddy /etc/caddy
+            chown -R caddy:caddy /var/log/caddy
+        else
+            echo "WARN: caddy-User existiert noch nicht, überspringe chown"
+        fi
     '
     
     save_state "$COMPONENT_NAME" "directories_created" "true"
@@ -218,10 +222,16 @@ configure_autostart() {
 create_base_config() {
     log "STEP" "Erstelle grundlegende QS-Caddyfile-Konfiguration..."
     
-    local config_content=$(cat << EOF
+    # Prüfe ob Verzeichnis existiert
+    if [ ! -d "/etc/caddy" ]; then
+        log "ERROR" "/etc/caddy Verzeichnis existiert nicht - erstelle es"
+        mkdir -p /etc/caddy
+    fi
+    
+    local config_content=$(cat << 'EOF'
 # QS-VPS Caddy Konfiguration - Quality Server Environment
-# Hostname: ${HOSTNAME}
-# Erstellt: $(date -Iseconds)
+# Hostname: PLACEHOLDER_HOSTNAME
+# Erstellt: PLACEHOLDER_TIMESTAMP
 
 # Globale Optionen
 {
@@ -258,6 +268,10 @@ import /etc/caddy/sites/*.caddy
 EOF
 )
     
+    # Ersetze Platzhalter
+    config_content="${config_content//PLACEHOLDER_HOSTNAME/${HOSTNAME}}"
+    config_content="${config_content//PLACEHOLDER_TIMESTAMP/$(date -Iseconds)}"
+    
     local config_file="/etc/caddy/Caddyfile"
     local current_checksum=""
     local new_checksum=""
@@ -265,27 +279,45 @@ EOF
     # Checksum berechnen falls Datei existiert
     if [ -f "$config_file" ]; then
         current_checksum=$(file_checksum "$config_file")
+        log "INFO" "Bestehende Caddyfile Checksum: $current_checksum"
     fi
     
     # Neue Checksum berechnen
     new_checksum=$(echo "$config_content" | sha256sum | cut -d' ' -f1)
+    log "INFO" "Neue Caddyfile Checksum: $new_checksum"
     
     # Nur aktualisieren wenn sich etwas geändert hat
     if [ "$current_checksum" != "$new_checksum" ]; then
-        # Backup erstellen
-        backup_file "$config_file" "caddy-base-config"
+        log "INFO" "Caddyfile-Update erforderlich - erstelle Backup"
         
-        # Neue Config schreiben
-        echo "$config_content" > "$config_file"
+        # Backup erstellen (nicht-kritisch, bei Fehler fortfahren)
+        backup_file "$config_file" "caddy-base-config" || log "WARN" "Backup fehlgeschlagen, fahre fort"
         
-        save_state "$COMPONENT_NAME" "base_config_checksum" "$new_checksum"
-        save_state "$COMPONENT_NAME" "base_config_updated" "$(date -Iseconds)"
-        
-        set_marker "caddy-base-config" "Base Caddyfile created"
-        log "INFO" "Grundlegende QS-Caddyfile-Konfiguration erstellt/aktualisiert."
+        # Neue Config schreiben mit Error-Handling
+        if echo "$config_content" > "$config_file"; then
+            log "INFO" "Caddyfile erfolgreich geschrieben"
+            
+            # Setze Berechtigungen
+            chmod 644 "$config_file"
+            if id caddy &>/dev/null; then
+                chown caddy:caddy "$config_file" || log "WARN" "chown fehlgeschlagen"
+            fi
+            
+            save_state "$COMPONENT_NAME" "base_config_checksum" "$new_checksum"
+            save_state "$COMPONENT_NAME" "base_config_updated" "$(date -Iseconds)"
+            
+            set_marker "caddy-base-config" "Base Caddyfile created"
+            log "INFO" "Grundlegende QS-Caddyfile-Konfiguration erstellt/aktualisiert."
+        else
+            log "ERROR" "Fehler beim Schreiben der Caddyfile nach $config_file"
+            return 1
+        fi
     else
         log "INFO" "QS-Caddyfile-Konfiguration unverändert, überspringe Aktualisierung."
+        set_marker "caddy-base-config" "Base Caddyfile unchanged"
     fi
+    
+    return 0
 }
 
 # Sicherheitskonfiguration erstellen
