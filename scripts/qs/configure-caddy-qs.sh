@@ -315,30 +315,17 @@ create_security_headers() {
     log_step "Erstelle Sicherheits-Header-Snippet..."
     
     cat > "${CADDY_DIR}/snippets/security-headers.caddy" << 'EOF'
-header {
-    # Strict-Transport-Security aktivieren
-    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-    
-    # XSS-Schutz aktivieren
-    X-XSS-Protection "1; mode=block"
-    
-    # Clickjacking-Schutz
-    X-Frame-Options "SAMEORIGIN"
-    
-    # MIME-Sniffing verhindern
-    X-Content-Type-Options "nosniff"
-    
-    # Referrer-Policy einschränken
-    Referrer-Policy "strict-origin-when-cross-origin"
-    
-    # Content-Security-Policy für erhöhte Sicherheit
-    Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' ws: wss:; font-src 'self' data:; frame-ancestors 'self';"
-    
-    # QS-Environment Marker
-    X-Environment "QS-VPS"
-    
-    # Entfernen von Server-Header
-    -Server
+# Benanntes Snippet für Security-Headers (QS-VPS)
+(security_headers) {
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-XSS-Protection "1; mode=block"
+        X-Frame-Options "SAMEORIGIN"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        X-Environment "QS-VPS"
+        -Server
+    }
 }
 EOF
     
@@ -376,9 +363,13 @@ EOF
 
     cat >> "${CADDY_DIR}/sites/code-server-qs.caddy" << EOF
     
-    # Nur Zugriff über Tailscale-IP-Bereich erlauben
+    # Matcher für Tailscale-Zugriff definieren
     @tailscale {
         remote_ip 100.64.0.0/10
+    }
+    
+    @not_tailscale {
+        not remote_ip 100.64.0.0/10
     }
     
     # Reverse Proxy zu code-server
@@ -386,8 +377,6 @@ EOF
         # Header für WebSocket-Unterstützung
         header_up Host {host}
         header_up X-Real-IP {remote_host}
-        header_up X-Forwarded-For {remote_host}
-        header_up X-Forwarded-Proto {scheme}
         header_up Connection {http.request.header.Connection}
         header_up Upgrade {http.request.header.Upgrade}
         
@@ -404,7 +393,7 @@ EOF
     respond @not_tailscale "Zugriff nur über Tailscale erlaubt (QS-VPS)" 403
     
     # Sicherheits-Header importieren
-    import ${CADDY_DIR}/snippets/security-headers.caddy
+    import security_headers
     
     # Kompression aktivieren
     encode gzip zstd
@@ -439,11 +428,13 @@ EOF
         remote_ip 100.64.0.0/10
     }
     
+    @not_tailscale {
+        not remote_ip 100.64.0.0/10
+    }
+    
     reverse_proxy @tailscale localhost:${CODE_SERVER_PORT} {
         header_up Host {host}
         header_up X-Real-IP {remote_host}
-        header_up X-Forwarded-For {remote_host}
-        header_up X-Forwarded-Proto {scheme}
         header_up Connection {http.request.header.Connection}
         header_up Upgrade {http.request.header.Upgrade}
         
@@ -457,7 +448,7 @@ EOF
     
     respond @not_tailscale "Zugriff nur über Tailscale erlaubt (QS-VPS)" 403
     
-    import ${CADDY_DIR}/snippets/security-headers.caddy
+    import security_headers
     encode gzip zstd
     
     log {
@@ -492,24 +483,8 @@ create_main_config() {
     
     # Server-Einstellungen
     servers {
-        protocol {
-            # Nur moderne TLS-Versionen
-            min_tls_version 1.2
-            
-            # HTTP/3 experimentell aktivieren
-            experimental_http3
-            
-            # Strict SNI Host
-            strict_sni_host
-        }
-        
-        # Timeouts
-        timeouts {
-            read_body 30s
-            read_header 10s
-            write 60s
-            idle 5m
-        }
+        protocols h1 h2 h3
+        strict_sni_host
     }
     
     # Globales Logging

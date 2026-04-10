@@ -245,27 +245,17 @@ create_security_config() {
     log "STEP" "Erstelle Sicherheitskonfiguration..."
     
     cat > /etc/caddy/snippets/security-headers.caddy << 'EOF'
-header {
-    # Strict-Transport-Security aktivieren
-    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-    
-    # XSS-Schutz aktivieren
-    X-XSS-Protection "1; mode=block"
-    
-    # Clickjacking-Schutz
-    X-Frame-Options "SAMEORIGIN"
-    
-    # MIME-Sniffing verhindern
-    X-Content-Type-Options "nosniff"
-    
-    # Referrer-Policy einschränken
-    Referrer-Policy "strict-origin-when-cross-origin"
-    
-    # QS-Environment Marker
-    X-Environment "QS-VPS"
-    
-    # Entfernen von Server-Header
-    -Server
+# Benanntes Snippet für Security-Headers (QS-VPS)
+(security_headers) {
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-XSS-Protection "1; mode=block"
+        X-Frame-Options "SAMEORIGIN"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        X-Environment "QS-VPS"
+        -Server
+    }
 }
 EOF
     
