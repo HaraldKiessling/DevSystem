@@ -318,7 +318,9 @@ backup_file() {
         echo "$backup_path"
         return 0
     else
-        return 1
+        # Datei existiert nicht - kein Backup nötig (neue Datei)
+        # Kein Fehler - return 0 für Kompatibilität mit set -e
+        return 0
     fi
 }
 

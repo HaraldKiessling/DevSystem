@@ -46,16 +46,6 @@ readonly LOG_FILE="${LOG_DIR}/master-orchestrator.log"
 readonly REPORT_DIR="/var/log/qs-deployment"
 readonly REPORT_PREFIX="deployment-report"
 
-# Farben für Terminal-Output
-readonly COLOR_GREEN='\033[0;32m'
-readonly COLOR_RED='\033[0;31m'
-readonly COLOR_YELLOW='\033[1;33m'
-readonly COLOR_BLUE='\033[0;34m'
-readonly COLOR_CYAN='\033[0;36m'
-readonly COLOR_MAGENTA='\033[0;35m'
-readonly COLOR_BOLD='\033[1m'
-readonly COLOR_RESET='\033[0m'
-
 # Exit-Codes
 readonly EXIT_SUCCESS=0
 readonly EXIT_ERROR=1
