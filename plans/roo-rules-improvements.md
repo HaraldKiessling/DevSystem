@@ -608,12 +608,43 @@ git commit -m "refactor: Konsolidiere .roo/ in .Roo/project-rules/"
 **Impact:** 🔥🔥 Verhindert fehlerhafte Deployments
 
 ### 5. MVP-Ausnahmen klären (10 Min)
-**Problem:** Unklar wann Post-MVP-Features erlaubt sind  
-**Lösung:** Kriterien für MVP-Ausnahmen dokumentieren  
-**Datei:** [`.Roo/project-rules/02-git-and-todo-workflow.md`](../.Roo/project-rules/02-git-and-todo-workflow.md)  
+**Problem:** Unklar wann Post-MVP-Features erlaubt sind
+**Lösung:** Kriterien für MVP-Ausnahmen dokumentieren
+**Datei:** [`.Roo/project-rules/02-git-and-todo-workflow.md`](../.Roo/project-rules/02-git-and-todo-workflow.md)
 **Impact:** 🔥 Klarheit bei Feature-Priorisierung
 
-**Gesamt-Aufwand Top 5:** ~1,5 Stunden  
+### 6. Doku-Commit-Regel (10 Min)
+
+**Problem identifiziert:** 2026-04-10 14:34 UTC
+- [`todo.md`](../todo.md) mit 14 Verbesserungen aktualisiert
+- Änderungen nicht committed/gepusht
+- Dokumentation war nicht auf GitHub aktuell
+
+**Lösung:**
+Neue Regel in `.roo/rules/02-git-and-todo-workflow.md`:
+
+> **Dokumentations-Commit-Pflicht:**
+> Nach jeder Änderung an Dokumentations-Dateien (*.md) müssen die Änderungen SOFORT committed und gepusht werden, außer die Doku-Änderung ist Teil eines unfertigen Features.
+>
+> **Prozess:**
+> 1. Dokumentation ändern
+> 2. `git add <dateien>`
+> 3. `git commit -m "docs: [Beschreibung]"`
+> 4. `git push origin main`
+>
+> **Betroffene Dateien:**
+> - [`todo.md`](../todo.md)
+> - `plans/*.md`
+> - Status-Reports (PHASE*.md, DEPLOYMENT*.md, etc.)
+> - Anleitungen (*.md im Root)
+
+**Aufwand:** 10 Minuten
+**Impact:** 🔥🔥 Hoch - Verhindert verlorene Dokumentation
+**Priorität:** DRINGEND
+
+**Umsetzung:** Regel als Aufgabe 05.1 in [`todo.md`](../todo.md) aufgenommen
+
+**Gesamt-Aufwand Top 6:** ~1,6 Stunden
 **Gesamt-Impact:** Maximal - Behebt alle identifizierten Probleme
 
 ---
