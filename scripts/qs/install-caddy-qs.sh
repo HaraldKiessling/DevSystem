@@ -228,14 +228,8 @@ create_base_config() {
     # Admin-API deaktivieren (Sicherheitsmaßnahme)
     admin off
     
-    # Standardprotokoll auf HTTP/2 setzen
+    # Server-Optionen
     servers {
-        protocol {
-            experimental_http3
-            strict_sni_host
-            min_tls_version 1.2
-        }
-        
         # Verbindungs-Timeouts und Limits
         timeouts {
             read_body 30s
