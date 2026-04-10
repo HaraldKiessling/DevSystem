@@ -26,6 +26,13 @@
 set -euo pipefail
 
 # ============================================================================
+# IDEMPOTENZ-LIBRARY LADEN
+# ============================================================================
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/lib/idempotency.sh"
+
+# ============================================================================
 # KONFIGURATION UND KONSTANTEN
 # ============================================================================
 
@@ -182,9 +189,11 @@ create_user() {
     
     if id "$QDRANT_USER" &>/dev/null; then
         log "WARN" "Benutzer '$QDRANT_USER' existiert bereits."
+        idempotency::set_marker "qdrant_qs_user_created"
     else
         useradd -r -s /bin/false -d "$QDRANT_DATA_DIR" "$QDRANT_USER" || error_exit "Fehler beim Erstellen des Benutzers."
         log "INFO" "Benutzer '$QDRANT_USER' erfolgreich erstellt."
+        idempotency::set_marker "qdrant_qs_user_created"
     fi
 }
 
@@ -218,6 +227,8 @@ download_qdrant() {
         log "WARN" "Qdrant-Binary existiert bereits - überspringe Download."
         local existing_version=$(./qdrant --version 2>&1 || echo "Version nicht lesbar")
         log "INFO" "Existierende Version: $existing_version"
+        idempotency::set_marker "qdrant_qs_binary_downloaded"
+        idempotency::save_state "qdrant_qs_version" "version=${QDRANT_VERSION}"
         return 0
     fi
     
@@ -243,14 +254,19 @@ download_qdrant() {
         log "WARN" "Qdrant-Binary-Verifizierung fehlgeschlagen - wird beim Service-Start getestet."
         log "INFO" "Binary-Datei existiert: $(ls -lh qdrant 2>/dev/null || echo 'nicht gefunden')"
     fi
+    
+    # Marker und State setzen
+    idempotency::set_marker "qdrant_qs_binary_downloaded"
+    idempotency::save_state "qdrant_qs_version" "version=${QDRANT_VERSION}"
 }
 
 create_config() {
     log "STEP" "Erstelle QS-Qdrant Konfiguration..."
     
     local config_file="$QDRANT_INSTALL_DIR/config.yaml"
+    local temp_config="/tmp/qdrant-config-qs-$$.yaml"
     
-    cat > "$config_file" << EOF
+    cat > "$temp_config" << EOF
 # QS-VPS Qdrant Konfiguration - Quality Server
 # Generiert: $(date '+%Y-%m-%d %H:%M:%S')
 
@@ -283,7 +299,7 @@ EOF
 
     # Füge API-Key hinzu, falls gesetzt
     if [ -n "$QS_QDRANT_API_KEY" ]; then
-        cat >> "$config_file" << EOF
+        cat >> "$temp_config" << EOF
 
 # API-Authentifizierung
 service:
@@ -294,8 +310,28 @@ EOF
         log "WARN" "Keine API-Authentifizierung konfiguriert (localhost-only)."
     fi
     
+    # Prüfe ob Config-Änderungen nötig sind (checksum-basiert)
+    if [ -f "${config_file}" ]; then
+        local old_checksum=$(idempotency::calculate_checksum "${config_file}")
+        local new_checksum=$(idempotency::calculate_checksum "${temp_config}")
+        
+        if [ "$old_checksum" = "$new_checksum" ]; then
+            log "INFO" "Qdrant-Config ist bereits aktuell (Checksum: ${old_checksum})."
+            rm -f "${temp_config}"
+            return 0
+        else
+            log "INFO" "Config-Änderungen erkannt (alt: ${old_checksum}, neu: ${new_checksum})."
+        fi
+    fi
+    
+    # Config übernehmen
+    mv "${temp_config}" "${config_file}"
     chown root:root "$config_file"
     chmod 644 "$config_file"
+    
+    # State speichern
+    idempotency::save_state "qdrant_qs_config" "checksum=$(idempotency::calculate_checksum "${config_file}")"
+    idempotency::set_marker "qdrant_qs_config_created"
     
     log "INFO" "QS-Konfiguration erstellt: $config_file"
 }
@@ -340,6 +376,8 @@ EOF
     systemctl daemon-reload || error_exit "Fehler beim Neuladen von systemd."
     systemctl enable qdrant-qs || error_exit "Fehler beim Aktivieren des Dienstes."
     
+    idempotency::set_marker "qdrant_qs_service_created"
+    
     log "INFO" "systemd-Service erstellt und aktiviert."
 }
 
@@ -358,6 +396,7 @@ start_service() {
     
     if systemctl is-active --quiet qdrant-qs; then
         log "INFO" "qdrant-qs-Service läuft."
+        idempotency::set_marker "qdrant_qs_service_started"
     else
         log "WARN" "qdrant-qs-Service scheint nicht zu laufen."
         return 1
@@ -528,6 +567,13 @@ main() {
     
     # Zusammenfassung
     show_summary
+    
+    # Finale Marker und State
+    idempotency::set_marker "qdrant_qs_deployed"
+    idempotency::save_state "qdrant_qs_deployment" "timestamp=$(date -Iseconds) version=${QDRANT_VERSION} http_port=${QDRANT_HTTP_PORT}"
+    
+    # Status-Report
+    idempotency::status_report "Qdrant-QS Deployment"
     
     log "INFO" "QS-VPS: Qdrant-Deployment erfolgreich abgeschlossen!"
     exit 0
