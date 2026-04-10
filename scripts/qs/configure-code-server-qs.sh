@@ -479,8 +479,8 @@ install_extensions() {
         # Prüfe ob Extension bereits installiert ist
         if echo "$installed_extensions" | grep -q "^${ext}$"; then
             log_success "  ✓ ${ext} bereits installiert (überspringe)"
-            ((skipped_count++))
-            ((installed_count++))
+            skipped_count=$((skipped_count + 1))
+            installed_count=$((installed_count + 1))
             continue
         fi
         
@@ -489,18 +489,18 @@ install_extensions() {
         # Installation mit explizitem Error-Handling (pipefail-safe)
         if su - "${CODE_SERVER_USER}" -c "code-server --install-extension ${ext} --force" >> "$QS_LOG_FILE" 2>&1; then
             log_success "  ✓ ${ext} erfolgreich installiert"
-            ((installed_count++))
+            installed_count=$((installed_count + 1))
         else
             # Bei Fehler: Prüfe ob Extension trotzdem installiert wurde (race condition)
             local recheck_extensions
             recheck_extensions=$(su - "${CODE_SERVER_USER}" -c "code-server --list-extensions" 2>/dev/null || true)
             if echo "$recheck_extensions" | grep -q "^${ext}$"; then
                 log_success "  ✓ ${ext} installiert (trotz warning)"
-                ((installed_count++))
+                installed_count=$((installed_count + 1))
             else
                 log_warning "  ✗ ${ext} konnte nicht installiert werden"
                 failed_extensions+=("${ext}")
-                ((failed_count++))
+                failed_count=$((failed_count + 1))
             fi
         fi
     done
