@@ -1,0 +1,43 @@
+#cloud-config
+
+# QS-VPS Cloud-Init - Vereinfachte Variante
+# Nutzt offizielles Tailscale-Script + Basis-Sicherheit
+# Ideal für temporäre Testing-Umgebungen
+
+hostname: devsystem-qs-vps
+
+# System Updates
+package_update: true
+package_upgrade: true
+
+# Basis-Pakete für Sicherheit
+packages:
+  - ufw
+  - fail2ban
+
+runcmd:
+  # Tailscale installieren und starten (offizielles Script)
+  - curl -fsSL https://tailscale.com/install.sh | sh
+  - tailscale up --authkey=YOUR_TAILSCALE_AUTH_KEY_HERE --hostname=devsystem-qs-vps --ssh
+  - tailscale ip -4 > /root/tailscale-ip.txt
+  
+  # UFW Firewall: SSH nur über Tailscale
+  - ufw --force reset
+  - ufw default deny incoming
+  - ufw default allow outgoing
+  - ufw allow in on tailscale0 to any port 22 comment 'SSH via Tailscale only'
+  - ufw allow 41641/udp comment 'Tailscale VPN'
+  - ufw --force enable
+  
+  # Fail2ban aktivieren (Standard-Konfiguration)
+  - systemctl enable fail2ban
+  - systemctl start fail2ban
+  
+  # Fertig-Meldung
+  - echo "QS-VPS Setup complete. Tailscale IP:" > /root/setup-complete.txt
+  - cat /root/tailscale-ip.txt >> /root/setup-complete.txt
+
+# System-Reboot nach Installation (optional)
+# power_state:
+#   mode: reboot
+#   timeout: 300

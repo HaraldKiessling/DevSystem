@@ -100,3 +100,6 @@ htmlcov/
 .env.development.local
 .env.test.local
 .env.production.local
+
+# Tailscale Auth Keys (sensibel)
+tailscale-authkey.txt
