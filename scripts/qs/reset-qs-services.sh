@@ -15,6 +15,7 @@
 #   --preserve-qdrant     Bewahre Qdrant-Daten (nur Config löschen)
 #   --dry-run             Zeige was gelöscht werden würde
 #   --skip-validation     Überspringe Post-Reset-Validierung
+#   --yes                 Überspringe Bestätigungsabfrage
 #   --help                Diese Hilfe anzeigen
 #
 # WICHTIG:
@@ -42,6 +43,7 @@ REMOTE_USER="${QS_REMOTE_USER:-root}"
 PRESERVE_QDRANT=false
 DRY_RUN=false
 SKIP_VALIDATION=false
+AUTO_CONFIRM=false
 
 # Farben
 readonly GREEN='\033[0;32m'
@@ -105,6 +107,7 @@ OPTIONEN:
     --preserve-qdrant     Bewahre Qdrant-Daten (nur Config löschen)
     --dry-run             Zeige was gelöscht werden würde
     --skip-validation     Überspringe Post-Reset-Validierung
+    --yes                 Überspringe Bestätigungsabfrage
     --help                Diese Hilfe anzeigen
 
 SICHERHEIT:
@@ -552,6 +555,10 @@ main() {
                 SKIP_VALIDATION=true
                 shift
                 ;;
+            --yes)
+                AUTO_CONFIRM=true
+                shift
+                ;;
             --help)
                 show_help
                 exit $EXIT_SUCCESS
@@ -580,8 +587,8 @@ main() {
         exit $EXIT_VALIDATION_ERROR
     fi
     
-    # Bestätigung (außer bei Dry-Run)
-    if [ "$DRY_RUN" != "true" ]; then
+    # Bestätigung (außer bei Dry-Run oder Auto-Confirm)
+    if [ "$DRY_RUN" != "true" ] && [ "$AUTO_CONFIRM" != "true" ]; then
         echo ""
         log_warn "ACHTUNG: Dieser Reset löscht Service-Daten permanent!"
         log_warn "Remote-Host: ${REMOTE_HOST}"
@@ -592,6 +599,8 @@ main() {
             log_info "Reset abgebrochen"
             exit $EXIT_SUCCESS
         fi
+    elif [ "$AUTO_CONFIRM" = "true" ]; then
+        log_info "Auto-Confirm aktiviert - Überspringe Bestätigung"
     fi
     
     # Reset durchführen

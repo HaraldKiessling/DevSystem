@@ -142,17 +142,17 @@ calculate_checksum() {
 # BACKUP-FUNKTIONEN
 # ============================================================================
 
-create_remote_backup_script() {
-    log_step "Erstelle Remote-Backup-Script..."
+execute_remote_backup() {
+    log_step "Führe Remote-Backup aus..."
     
-    # Script auf Remote-Host erstellen
-    ssh "${REMOTE_USER}@${REMOTE_HOST}" bash << 'REMOTE_SCRIPT'
+    # Backup auf Remote-Host erstellen und Pfad zurückgeben
+    local remote_backup_dir=$(ssh "${REMOTE_USER}@${REMOTE_HOST}" bash << 'REMOTE_SCRIPT'
 set -euo pipefail
 
-BACKUP_DIR="${1:-/tmp/qs-backup-$(date +%Y%m%d-%H%M%S)}"
+BACKUP_DIR="/tmp/qs-backup-$(date +%Y%m%d-%H%M%S)"
 MANIFEST_FILE="${BACKUP_DIR}/BACKUP-MANIFEST.txt"
 
-echo "[REMOTE] Erstelle Backup-Verzeichnis: ${BACKUP_DIR}"
+echo "[REMOTE] Erstelle Backup-Verzeichnis: ${BACKUP_DIR}" >&2
 mkdir -p "${BACKUP_DIR}"/{config,data,state,services,logs}
 
 # Backup-Manifest initialisieren
@@ -272,34 +272,19 @@ echo "=== Backup Summary ===" >> "${MANIFEST_FILE}"
 echo "Total Size: $(du -sh "${BACKUP_DIR}" | awk '{print $1}')" >> "${MANIFEST_FILE}"
 echo "File Count: $(find "${BACKUP_DIR}" -type f | wc -l)" >> "${MANIFEST_FILE}"
 
-echo "[REMOTE] Backup abgeschlossen: ${BACKUP_DIR}"
+echo "[REMOTE] Backup abgeschlossen: ${BACKUP_DIR}" >&2
+# Ausgabe des Pfads auf stdout für Capture
 echo "${BACKUP_DIR}"
 REMOTE_SCRIPT
-
-    log_success "Remote-Backup-Script ausgeführt"
-}
-
-execute_remote_backup() {
-    log_step "Führe Remote-Backup aus..."
-    
-    # Backup auf Remote-Host erstellen
-    REMOTE_BACKUP_DIR=$(ssh "${REMOTE_USER}@${REMOTE_HOST}" bash << EXEC_SCRIPT
-set -euo pipefail
-BACKUP_DIR="/tmp/qs-backup-\$(date +%Y%m%d-%H%M%S)"
-
-$(typeset -f create_remote_backup_script)
-
-create_remote_backup_script "\${BACKUP_DIR}"
-EXEC_SCRIPT
 )
     
-    if [ -z "$REMOTE_BACKUP_DIR" ]; then
+    if [ -z "$remote_backup_dir" ]; then
         log_error "Remote-Backup fehlgeschlagen"
         return 1
     fi
     
-    log_success "Remote-Backup erstellt: ${REMOTE_BACKUP_DIR}"
-    echo "$REMOTE_BACKUP_DIR"
+    log_success "Remote-Backup erstellt: ${remote_backup_dir}"
+    echo "$remote_backup_dir"
 }
 
 download_backup() {
