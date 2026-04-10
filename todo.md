@@ -58,21 +58,29 @@ Keine aktiven MVP-Aufgaben - MVP ist vollständig abgeschlossen! 🎉
 
 ## 🧹 Housekeeping & Wartung
 
-### Git-Branch-Cleanup
-- [x] Alle lokalen Feature-Branches gelöscht (3/3)
-- [x] Remote-Branches gelöscht (4/5)
-- [ ] **MANUELL:** GitHub Default-Branch auf `main` ändern + letzten Branch löschen
-  - **Warum:** `feature/vps-preparation` ist noch als Default-Branch konfiguriert
-  - **Anleitung:** Siehe [`GIT-BRANCH-CLEANUP-REPORT.md`](GIT-BRANCH-CLEANUP-REPORT.md) Abschnitt "Manueller Eingriff erforderlich"
-  - **Schritte:**
-    1. https://github.com/HaraldKiessling/DevSystem/settings → Default branch → `main` wählen
-    2. `git push origin --delete feature/vps-preparation`
-    3. `git fetch --prune && git branch -a` zur Verifizierung
-  - **Status:** Wartet auf manuellen Eingriff
-- [x] GIT-BRANCH-CLEANUP-REPORT.md erstellt und finalisiert
+### Git-Branch-Cleanup - STATUS: ⚠️ 87,5% ABGESCHLOSSEN
+- [x] Alle lokalen Feature-Branches gelöscht (3/3) ✅
+- [x] Remote-Branches gelöscht (4/5) ⚠️
+- [x] GitHub Default-Branch-Änderung versucht ⚠️
+- [ ] **GitHub-Problem:** `feature/vps-preparation` kann nicht gelöscht werden
+  - **Symptom:** "Could not change default branch" trotz geschlossener PRs
+  - **Ursache:** GitHub UI/Backend-Problem oder verborgene Branch Protection Rule
+  - **Impact:** MINIMAL - main Branch ist funktionsfähig, keine funktionalen Einschränkungen
+  - **Dokumentation:**
+    - [`GIT-BRANCH-CLEANUP-REPORT.md`](GIT-BRANCH-CLEANUP-REPORT.md) - Vollständiger Bericht
+    - [`GITHUB-DEFAULT-BRANCH-TROUBLESHOOTING.md`](GITHUB-DEFAULT-BRANCH-TROUBLESHOOTING.md) - Troubleshooting-Guide
+    - [`BRANCH-DELETION-VIA-GITHUB-UI.md`](BRANCH-DELETION-VIA-GITHUB-UI.md) - Alternative Lösung
+  - **Lösungswege:**
+    1. **GitHub CLI verwenden:** `gh api --method PATCH /repos/HaraldKiessling/DevSystem -f default_branch='main'`
+    2. **GitHub Support kontaktieren:** https://support.github.com/
+    3. **Pragmatisch:** Mit aktuellem Zustand arbeiten - Branch ist inaktiv
+  - **Status:** Dokumentiert und Lösungswege bereitgestellt
+- [x] GIT-BRANCH-CLEANUP-REPORT.md erstellt und finalisiert (inkl. Troubleshooting-Dokumentation)
 - [x] git-workflow.md mit Best Practices aktualisiert
 
 **Cleanup-Erfolg:** 87,5% (7 von 8 Branches gelöscht)
+**Arbeitsfähigkeit:** ✅ 100% - main Branch voll funktionsfähig
+**Verbleibender Branch:** Hat keinen Einfluss auf tägliche Arbeit
 
 ---
 
