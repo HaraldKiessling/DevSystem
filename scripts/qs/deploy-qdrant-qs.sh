@@ -277,7 +277,6 @@ storage:
   hnsw_index:
     m: 16
     ef_construct: 100
-    full_scan_threshold: 10000
 
 log_level: INFO
 EOF
