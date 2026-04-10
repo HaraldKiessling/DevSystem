@@ -29,7 +29,8 @@ set -euo pipefail
 # ============================================================================
 
 # !!! WICHTIG: Diese Variable MUSS vor der Ausführung gesetzt werden !!!
-QS_TAILSCALE_IP="QS_TAILSCALE_IP"
+# Entweder als Environment-Variable oder durch sed-Ersetzung im Skript
+QS_TAILSCALE_IP="${QS_TAILSCALE_IP:-QS_TAILSCALE_IP}"
 
 # Farbdefinitionen für Terminal-Ausgabe
 readonly RED='\033[0;31m'
