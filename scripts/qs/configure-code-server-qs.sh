@@ -220,12 +220,13 @@ check_user_exists() {
 
 check_service_exists() {
     log_step "Prüfe ob code-server-qs-Service existiert..."
-    
-    if ! systemctl list-unit-files | grep -q "code-server-qs.service"; then
+
+    # Robuster Check mit explizitem Exit-Code-Handling (pipefail-safe)
+    if systemctl list-unit-files | grep -q "code-server-qs.service"; then
+        log_success "code-server-qs-Service existiert."
+    else
         error_exit "code-server-qs-Service existiert nicht. Bitte führe zuerst 'install-code-server-qs.sh' aus."
     fi
-    
-    log_success "code-server-qs-Service existiert."
 }
 
 # ============================================================================
