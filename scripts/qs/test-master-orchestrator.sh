@@ -3,11 +3,13 @@
 # Test-Suite für QS Master-Orchestrator
 # Testet alle Funktionen von setup-qs-master.sh
 #
+# Hinweis: QS-VPS Ports - SSH: 22 (Standard), HTTPS: 9443 (nicht Standard!)
+#
 # Verwendung:
 #   bash scripts/qs/test-master-orchestrator.sh [--host=IP] [--user=USER]
 #
 # Optionen:
-#   --host=IP        Remote-Test gegen VPS (SSH)
+#   --host=IP        Remote-Test gegen VPS (SSH Port 22)
 #   --user=USER      SSH-User (default: root)
 #   --skip-remote    Nur lokale Tests
 #

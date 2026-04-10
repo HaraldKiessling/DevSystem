@@ -37,7 +37,7 @@ bash scripts/qs/diagnose-ssh-vps.sh --host=devsystem-qs-vps.tailcfea8a.ts.net
 Der SSH-Zugang funktioniert mit dem korrekten Hostnamen automatisch:
 
 ```bash
-# SSH-Test
+# SSH-Test (Standard SSH Port 22)
 ssh -i ~/.ssh/id_ed25519 root@devsystem-qs-vps.tailcfea8a.ts.net "echo 'SSH OK'"
 
 # Repository synchronisieren
@@ -45,6 +45,12 @@ rsync -avz --exclude='.git' -e "ssh -i ~/.ssh/id_ed25519" \
   /root/work/DevSystem/ \
   root@devsystem-qs-vps.tailcfea8a.ts.net:/root/work/DevSystem/
 ```
+
+**⚠️ Wichtig - Ports auf QS-VPS:**
+- **SSH:** Port 22 (Standard)
+- **HTTPS/Caddy:** Port 9443 (NICHT Standard 443!)
+  - Grund: Port 443 wird von Tailscale verwendet
+  - Zugriff: `https://devsystem-qs-vps.tailcfea8a.ts.net:9443`
 
 ---
 
@@ -94,6 +100,8 @@ bash scripts/qs/test-master-orchestrator.sh \
   --user=root \
   --mode=remote
 ```
+
+**Hinweis:** Diese Tests verwenden SSH (Port 22). HTTPS-Tests gegen Caddy müssen Port 9443 verwenden!
 
 ---
 

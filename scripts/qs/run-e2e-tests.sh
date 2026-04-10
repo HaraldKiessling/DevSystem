@@ -8,8 +8,9 @@
 #   Nutzt SSH für Remote-Execution
 #
 # Voraussetzungen:
-#   - SSH-Zugriff zum QS-VPS konfiguriert
+#   - SSH-Zugriff zum QS-VPS konfiguriert (Port 22)
 #   - Tailscale VPN aktiv
+#   - QS-VPS Ports: SSH=22, HTTPS=9443 (nicht Standard!)
 #
 # Parameter:
 #   --host=IP         VPS IP/Hostname (Standard: aus Environment)
@@ -18,7 +19,7 @@
 #   --skip-deploy     Deployment überspringen, nur Tests
 #
 # Verwendung:
-#   bash run-e2e-tests.sh --host=100.100.221.56 --user=root
+#   bash run-e2e-tests.sh --host=devsystem-qs-vps.tailcfea8a.ts.net --user=root
 #
 
 set -euo pipefail

@@ -359,6 +359,8 @@ run_component() {
     # Dry-Run-Mode
     if [ "$DRY_RUN" = true ]; then
         log "INFO" "[DRY-RUN] Würde ausführen: $comp_script"
+        # Setze Marker auch im Dry-Run für Dependency-Chain-Simulation
+        set_marker "$comp_id" "[DRY-RUN] $comp_desc"
         ((SKIPPED_COMPONENTS++))
         return 0
     fi
@@ -382,6 +384,9 @@ run_component() {
         save_state "master" "component_${comp_id}_status" "success"
         save_state "master" "component_${comp_id}_duration" "$duration"
         save_state "master" "component_${comp_id}_timestamp" "$(date -Iseconds)"
+        
+        # Setze Top-Level-Marker für Dependency-Checks
+        set_marker "$comp_id" "$comp_desc"
         
         ((SUCCESSFUL_COMPONENTS++))
         return 0

@@ -69,9 +69,12 @@ Vollautomatisierte, idempotente QS-VPS-Deployments mit GitHub Actions Integratio
 #### SSH-Diagnose & Fix
 - ✅ `diagnose-ssh-vps.sh` erstellt (590 Zeilen)
 - ✅ Vollständige Tailscale-SSH-Diagnose
-- ✅ SSH-Zugang zum QS-VPS etabliert
+- ✅ SSH-Zugang zum QS-VPS etabliert (Port 22)
 - ✅ Korrekte Host-Identifikation: `devsystem-qs-vps.tailcfea8a.ts.net`
 - ✅ Repository auf QS-VPS synchronisiert
+- ✅ QS-VPS Port-Dokumentation erweitert:
+  - SSH: Port 22 (Standard)
+  - HTTPS/Caddy: Port 9443 (nicht Standard 443, Tailscale nutzt 443)
 
 #### Caddy-Syntax-Fix
 - ✅ Ungültige `protocol` Direktive entfernt
