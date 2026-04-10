@@ -228,7 +228,7 @@ download_qdrant() {
     rm qdrant-x86_64-unknown-linux-gnu.tar.gz
     
     # Verifiziere Binary
-    local version_output=$(./$QDRANT_INSTALL_DIR/qdrant --version 2>&1 || echo "error")
+    local version_output=$(./qdrant --version 2>&1 || echo "error")
     if [[ "$version_output" == *"error"* ]]; then
         error_exit "Qdrant-Binary ist nicht funktionsfähig."
     fi
