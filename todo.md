@@ -86,6 +86,8 @@ Keine aktiven MVP-Aufgaben - MVP ist vollständig abgeschlossen! 🎉
 
 ## 🎯 Post-MVP: QS-GitHub-Integration (Aktuelle Priorität: HOCH)
 
+**⚠️ POST-MVP Feature** (entwickelt mit User-Zustimmung am 2026-04-10)
+
 ### Kontext
 Vollautomatisierte QS-VPS-Deployments mit idempotenten Scripts über GitHub Actions. Ermöglicht Deployments vom Handy aus.
 
@@ -695,6 +697,127 @@ Erweiterte Features für zukünftige Ausbaustufen:
 - Dokumentation: ✅ Vollständig
 
 **Gesamt-Erfolgsquote:** ~83% (5/6 Ziele erreicht)
+
+---
+
+## 🔍 Projekt-Verbesserungen (Analyse 2026-04-10)
+
+**Analyse-Score:** 🟢 86% (B+) - Sehr gut mit Verbesserungspotenzial
+
+### 🔴 Sprint 1: Kritisch (Sofort, 2-3h)
+
+#### Todo: Feature-Branch mergen (KRITISCH)
+- **Status:** Todo
+- **Zeitaufwand:** 30 Min
+- **Problem:** `feature/qs-github-integration` mit 2.000+ Zeilen fertigem Code liegt seit Tagen ungemerged
+- **Impact:** Verletzt Git-Workflow-Regel, Code-Divergenz, Merge-Konflikte wahrscheinlicher
+- **Lösung:**
+  ```bash
+  git checkout main
+  git merge --no-ff feature/qs-github-integration \
+    -m "feat(qs): Phase 1+2 QS-GitHub-Integration abgeschlossen"
+  git branch -d feature/qs-github-integration
+  git push origin --delete feature/qs-github-integration
+  git push origin main
+  ```
+
+#### Todo: Git-Branch-Cleanup abschließen
+- **Status:** Todo
+- **Zeitaufwand:** 5 Min
+- **Problem:** 1 verwaister Branch (`feature/vps-preparation`) kann nicht gelöscht werden
+- **Impact:** Repository-Unordnung, 87,5% Cleanup-Status
+- **Lösung:**
+  ```bash
+  gh auth login
+  gh api --method PATCH /repos/HaraldKiessling/DevSystem -f default_branch='main'
+  gh api --method DELETE /repos/HaraldKiessling/DevSystem/git/refs/heads/feature/vps-preparation
+  ```
+
+#### Todo: .roo und .Roo Verzeichnisse konsolidieren
+- **Status:** Todo
+- **Zeitaufwand:** 1h
+- **Problem:** Zwei Verzeichnisse (`.roo/` und `.Roo/`) mit redundanten Inhalten
+- **Impact:** Verwirrung, schlechtere Wartbarkeit
+- **Lösung:**
+  ```bash
+  mkdir -p .Roo/project-rules
+  mv .roo/rules/*.md .Roo/project-rules/
+  rm -rf .roo/
+  git add .Roo/ .gitignore
+  git commit -m "refactor: Konsolidiere .roo/ in .Roo/project-rules/"
+  ```
+
+#### Todo: Code-Quality-Standards dokumentieren
+- **Status:** Todo
+- **Zeitaufwand:** 2h
+- **Problem:** Keine dokumentierten Bash-Best-Practices, inkonsistente Code-Qualität
+- **Impact:** Schwerer zu warten bei Team-Erweiterung
+- **Lösung:** Neue Datei `.Roo/project-rules/05-code-quality.md` erstellen mit:
+  - Bash-Script-Standards (Header, Idempotenz, Fehlerbehandlung)
+  - Logging-Konventionen
+  - Variablen-Naming
+  - Code-Review-Checkliste
+
+### 🟠 Sprint 2: Wichtig (Diese Woche, 3-4h)
+
+#### Todo: MVP-Ausnahmen-Checklist in Rules integrieren
+- **Status:** Todo
+- **Zeitaufwand:** 30 Min
+- **Problem:** MVP-Regel wurde verletzt (QS-GitHub-Integration ist Post-MVP)
+- **Lösung:** `.roo/rules/02-git-and-todo-workflow.md` erweitern um:
+  ```markdown
+  ## MVP-Ausnahme Checklist
+  - [ ] MVP zu 100% funktionsfähig
+  - [ ] Feature in todo.md als "Post-MVP" dokumentiert
+  - [ ] User-Zustimmung per Chat eingeholt (Timestamp)
+  - [ ] Keine MVP-Blocker offen
+  - [ ] Backlog-Review durchgeführt (letzte 30 Tage)
+  ```
+
+#### Todo: Vollständige Remote E2E-Tests durchführen
+- **Status:** Todo
+- **Zeitaufwand:** 1h
+- **Problem:** Nur 3/16 Tests durchgeführt (SSH-Probleme waren Blocker)
+- **Impact:** Deployment-Fehler könnten unentdeckt bleiben
+- **Lösung:**
+  ```bash
+  bash scripts/qs/run-e2e-tests.sh \
+    --host=devsystem-qs-vps.tailcfea8a.ts.net --user=root
+  # Ergebnisse in: vps-test-results-phase1-e2e-FINAL.md
+  ```
+
+#### Todo: Bug-Fixing-Workflow dokumentieren
+- **Status:** Todo
+- **Zeitaufwand:** 30 Min
+- **Lösung:** In `.roo/rules/03-testing-and-decision.md` ergänzen
+
+#### Todo: Shellcheck für alle Scripts ausführen
+- **Status:** Todo
+- **Zeitaufwand:** 1h
+- **Lösung:**
+  ```bash
+  find scripts/ -name "*.sh" -exec shellcheck {} \;
+  # Warnings beheben
+  ```
+
+### 🟡 Sprint 3: Nice-to-Have (Backlog, 8-11h)
+
+#### Todo: Monitoring-System implementieren
+- **Status:** Todo (Post-MVP)
+- **Zeitaufwand:** 4-6h
+- **Ziel:** Proaktive Überwachung (Health-Checks, Service-Status, Disk-Space)
+- **Lösung:** `scripts/monitoring/health-check.sh` + Cron-Job
+
+#### Todo: Disaster-Recovery-Plan erstellen
+- **Status:** Todo (Post-MVP)
+- **Zeitaufwand:** 2-3h
+- **Ziel:** Vollständige System-Wiederherstellung dokumentieren
+- **Lösung:** Neue Datei `plans/disaster-recovery.md`
+
+#### Todo: Performance-Profiling durchführen
+- **Status:** Todo (Post-MVP)
+- **Zeitaufwand:** 2h
+- **Ziel:** Deployment-Geschwindigkeit optimieren (Target: < 5 Min)
 
 ---
 
