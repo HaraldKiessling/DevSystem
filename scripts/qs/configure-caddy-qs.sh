@@ -347,7 +347,7 @@ create_code_server_config() {
 # QS-VPS code-server Reverse Proxy Konfiguration
 # Quality Server Environment
 # Zugriff nur über QS-Tailscale-IP: ${QS_TAILSCALE_IP}
-https://${QS_TAILSCALE_IP} {
+https://${QS_TAILSCALE_IP}:9443 {
 EOF
 
     if [ "$use_manual_tls" = true ]; then
@@ -414,7 +414,7 @@ EOF
 }
 
 # Zusätzlicher Zugriff über Domain (falls DNS konfiguriert)
-https://${DOMAIN} {
+https://${DOMAIN}:9443 {
 EOF
 
     if [ "$use_manual_tls" = true ]; then
