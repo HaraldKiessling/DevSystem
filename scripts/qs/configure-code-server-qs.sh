@@ -167,7 +167,25 @@ check_root() {
 check_password_placeholder() {
     log_step "Prüfe QS_CODE_SERVER_PASSWORD..."
     
+    local config_file="/home/${CODE_SERVER_USER}/.config/code-server/config.yaml"
+    
+    # Wenn Placeholder nicht ersetzt wurde
     if [ "$QS_CODE_SERVER_PASSWORD" = "QS_CODE_SERVER_PASSWORD" ]; then
+        # Prüfe ob bereits eine Config existiert (Idempotenz)
+        if [ -f "$config_file" ]; then
+            # Extrahiere vorhandenes Passwort aus Config
+            local existing_password=$(grep '^password:' "$config_file" | awk '{print $2}' || echo "")
+            if [ -n "$existing_password" ]; then
+                log_warning "QS_CODE_SERVER_PASSWORD nicht gesetzt, aber Config existiert bereits."
+                log_info "Verwende bestehendes Passwort aus Config (Idempotenz)."
+                # Überschreibe Placeholder mit bestehendem Passwort
+                QS_CODE_SERVER_PASSWORD="$existing_password"
+                log_success "Bestehendes Passwort wird beibehalten."
+                return 0
+            fi
+        fi
+        
+        # Keine Config vorhanden - Abbruch erforderlich
         error_exit "QS_CODE_SERVER_PASSWORD wurde nicht gesetzt! Bitte ersetze den Platzhalter vor der Ausführung."
     fi
     
