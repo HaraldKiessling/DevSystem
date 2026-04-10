@@ -222,7 +222,10 @@ check_service_exists() {
     log_step "Prüfe ob code-server-qs-Service existiert..."
 
     # Robuster Check mit explizitem Exit-Code-Handling (pipefail-safe)
-    if systemctl list-unit-files | grep -q "code-server-qs.service"; then
+    # Speichere grep's Exit-Code explizit, um pipefail zu umgehen
+    local service_list
+    service_list=$(systemctl list-unit-files 2>/dev/null || true)
+    if echo "$service_list" | grep -q "code-server-qs.service"; then
         log_success "code-server-qs-Service existiert."
     else
         error_exit "code-server-qs-Service existiert nicht. Bitte führe zuerst 'install-code-server-qs.sh' aus."
