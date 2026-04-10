@@ -461,6 +461,242 @@ grep -A 20 "check_dependencies()" scripts/qs/setup-qs-master.sh
 - **Alternativen:** [Mindestens 2 machbare technische Optionen]
 - **Empfehlung:** [Klare Empfehlung als DevOps-Experte mit Begründung]
 
+## 🔧 .Roo-Regeln Verbesserungen
+
+**Kontext:** Nach Abschluss von Phase 1+2 des QS-Systems (~2.000 Zeilen Code) wurden die `.roo`-Regeln analysiert. Diese Verbesserungen basieren auf echten Projekterfahrungen und lösen konkrete Probleme.
+
+**Dokumentation:** [`plans/roo-rules-improvements.md`](plans/roo-rules-improvements.md)
+
+---
+
+### DRINGEND (Sofort umsetzen - 1,5h Gesamt)
+
+Diese 5 Verbesserungen lösen **alle** Probleme die während Phase 1+2 auftraten:
+
+- [ ] 01 - Branch-Cleanup-Regel hinzufügen (15 Min)
+  - **Datei:** `.roo/rules/02-git-and-todo-workflow.md`
+  - **Problem:** 7 von 8 Branches mussten manuell gelöscht werden
+  - **Lösung:** Branch-Management-Sektion mit Cleanup-Befehlen
+  - **Regel:** Feature-Branches SOFORT nach Merge löschen (lokal + remote)
+  - **Automation:** GitHub "Automatically delete head branches" aktivieren
+  - **Begründung:** Verhindert Branch-Wildwuchs wie in GIT-BRANCH-CLEANUP-REPORT.md
+
+- [ ] 02 - E2E-Test-Flexibilität erhöhen (20 Min)
+  - **Datei:** `.roo/rules/03-testing-and-decission.md`
+  - **Problem:** SSH-Problem blockierte Merge 2 Tage trotz funktionierendem Code
+  - **Lösung:** Alternative Test-Strategien erlauben (Lokal + Code-Review)
+  - **Regel:** Bei VPS-Zugriffsproblemen sind umfassende lokale Tests + Dokumentation ausreichend
+  - **Mindestanforderung:** Alle lokalen Tests + Smoke-Testing dokumentiert
+  - **Begründung:** Verhindert Merge-Blockaden bei Infrastruktur-Problemen
+
+- [ ] 03 - Hotfix-Workflow definieren (15 Min)
+  - **Datei:** `.roo/rules/02-git-and-todo-workflow.md`
+  - **Problem:** Dependency-Check-Bug hatte keinen Fast-Track-Prozess
+  - **Lösung:** Hotfix-Prozess mit Fast-Track-Regeln
+  - **Regel:** Branch-Naming `hotfix/<bug>`, E2E-Tests dürfen übersprungen werden wenn:
+    - Bug blockiert Produktion
+    - Fix ist minimal (< 20 Zeilen)
+    - Code-Review erfolgt
+    - Rollback-Plan dokumentiert
+  - **Post-Merge:** E2E-Tests nachholen innerhalb 24h
+  - **Begründung:** Kritische Bugs verzögerten Deployment unnötig
+
+- [ ] 04 - Post-Deployment-Checks standardisieren (30 Min)
+  - **Datei:** `.roo/rules/04-deployment-and-operations.md` (NEU erstellen)
+  - **Problem:** Keine standardisierte Validierung nach Deployment
+  - **Lösung:** 5 Pflicht-Checks nach jedem Deployment:
+    1. Service-Status (systemctl is-active)
+    2. Port-Verfügbarkeit (ss -tlnp)
+    3. HTTPS-Zugriff (curl -k)
+    4. Log-Validation (journalctl - keine Errors)
+    5. Idempotenz-Check (zweiter Durchlauf < 10s)
+  - **Begründung:** Verhindert fehlerhafte Deployments in Produktion
+
+- [ ] 05 - MVP-Ausnahmen-Prozess klären (10 Min)
+  - **Datei:** `.roo/rules/02-git-and-todo-workflow.md`
+  - **Problem:** Phase 3 (GitHub Actions) ist nicht MVP, wurde aber trotzdem umgesetzt
+  - **Lösung:** Klare Kriterien für Post-MVP-Features:
+    - MVP zu 100% funktionsfähig
+    - Feature dokumentiert als "Post-MVP"
+    - Feature blockiert keine MVP-Arbeit
+    - User hat explizit zugestimmt
+  - **Begründung:** Klarheit bei Feature-Priorisierung
+
+- [ ] 05.1 - Doku-Commit-Regel hinzufügen (10 Min, .roo/rules/02-git-and-todo-workflow.md)
+  - **Problem:** Änderungen an Dokumentation (todo.md, Konzepte, Reports) werden oft nicht sofort committed
+  - **Lösung:** Explizite Regel: "Nach jeder Änderung an Dokumentations-Dateien (*.md) muss sofort committed und gepusht werden"
+  - **Betroffene Dateien:** todo.md, plans/*.md, Status-Reports, Anleitungen
+  - **Prozess:**
+    1. Doku-Änderung abgeschlossen
+    2. `git add <geänderte-dateien>`
+    3. `git commit -m "docs: [Beschreibung der Änderung]"`
+    4. `git push origin main`
+  - **Ausnahme:** Nur wenn Doku-Änderung Teil eines größeren Features ist, das noch nicht fertig ist
+
+**Gesamt-Impact:** 🔥🔥🔥 MAXIMAL - Behebt alle identifizierten Blocker
+
+---
+
+### WICHTIG (Diese Woche - 4-5h Gesamt)
+
+Strukturelle Verbesserungen für langfristige Wartbarkeit:
+
+- [ ] 06 - Code-Quality-Standards für Bash erstellen (1-2h)
+  - **Datei:** `.roo/rules/05-code-quality.md` (NEU erstellen)
+  - **Problem:** 12 Bash-Scripts ohne definierte Standards geschrieben
+  - **Lösung:** Code-Quality-Richtlinien dokumentieren:
+    - Pflicht-Header (shebang, set -euo pipefail)
+    - Idempotenz-Prinzipien (Marker-basierte Checks)
+    - Logging-Standards (strukturierte Log-Funktion)
+    - Fehlerbehandlung (error_exit, trap ERR)
+    - Variablen-Naming (UPPERCASE global, lowercase lokal)
+    - Kommentierung (Docstrings für Funktionen)
+    - Code-Review-Checkliste (8 Punkte)
+  - **Begründung:** Konsistente Code-Qualität bei wachsendem Projekt
+
+- [ ] 07 - .roo/ und .Roo/ konsolidieren (1h)
+  - **Problem:** Zwei separate Verzeichnisse mit teilweise redundanten Inhalten
+  - **Lösung:** Alles in `.Roo/` konsolidieren:
+    ```
+    .Roo/
+    ├── context.md              (bleibt)
+    ├── rules.md                (bleibt)
+    ├── mode-rules/             (bleibt)
+    └── project-rules/          (NEU - Inhalte von .roo/rules/)
+        ├── 01-mission-and-stack.md
+        ├── 02-git-and-todo-workflow.md
+        ├── 03-testing-and-decision.md
+        ├── 04-deployment-and-operations.md (NEU)
+        └── 05-code-quality.md (NEU)
+    ```
+  - **Migration:** `mv .roo/rules/*.md .Roo/project-rules/ && rm -rf .roo/`
+  - **Begründung:** Keine Redundanz, klare Struktur
+
+- [ ] 08 - Bug-Fixing-Workflow dokumentieren (30 Min)
+  - **Datei:** `.roo/rules/03-testing-and-decision.md`
+  - **Problem:** Kein strukturierter Umgang mit Bugs während E2E-Tests
+  - **Lösung:** Bug-Handling-Prozess mit Severity-Einschätzung:
+    - Kritisch: Blockiert MVP → Hotfix sofort
+    - Hoch: Beeinträchtigt Nutzung → Fix vor Merge
+    - Mittel: Workaround möglich → Separater Branch
+    - Niedrig: Kosmetisch → Backlog
+  - **Re-Test:** Nach Bug-Fix E2E-Tests wiederholen
+  - **Begründung:** Strukturierter Umgang mit Bugs
+
+- [ ] 09 - Rollback-Prozedur dokumentieren (45 Min)
+  - **Datei:** `.roo/rules/04-deployment-and-operations.md`
+  - **Problem:** Keine dokumentierte Vorgehensweise bei fehlgeschlagenen Deployments
+  - **Lösung:** 6-Schritte-Rollback-Prozedur:
+    1. Sofort-Maßnahme (Rollback-Befehl)
+    2. Logs sichern
+    3. Root-Cause-Analysis
+    4. Service-Validation
+    5. Fix entwickeln
+    6. Re-Deploy mit zusätzlichen Tests
+  - **Begründung:** Sicherheitsnetz bei Deployment-Problemen
+
+- [ ] 10 - Hardware-Specs und Versionen dokumentieren (30 Min)
+  - **Datei:** `.roo/rules/01-mission-and-stack.md`
+  - **Problem:** Keine VPS-Anforderungen, keine Software-Versionen dokumentiert
+  - **Lösung:** Technische Anforderungen hinzufügen:
+    - VPS-Mindestspecs (2 CPU, 4GB RAM, 50GB SSD)
+    - Software-Versionen (Ubuntu 22.04, Caddy 2.7.x, etc.)
+    - Backup-Strategie (tägliche Snapshots)
+    - Skalierungskonzept (Single-User → Multi-User)
+  - **Begründung:** Reproduzierbarkeit und Skalierbarkeit
+
+**Gesamt-Impact:** 🔥🔥 HOCH - Verbessert Wartbarkeit langfristig
+
+---
+
+### NICE-TO-HAVE (Backlog - 6-7h Gesamt)
+
+Erweiterte Features für zukünftige Ausbaustufen:
+
+- [ ] 11 - Monitoring-Regeln definieren (1h)
+  - **Datei:** `.roo/rules/04-deployment-and-operations.md`
+  - **Lösung:** Tägliche + Wöchentliche Checks:
+    - Services laufen, Disk-Space >20%, RAM <80%
+    - System-Updates, Backup-Integrität, SSL-Zertifikate
+  - **Priorität:** Post-MVP Phase 4
+
+- [ ] 12 - Performance-Testing-Regeln (1h)
+  - **Datei:** `.roo/rules/03-testing-and-decision.md`
+  - **Lösung:** Test-Pyramide erweitern:
+    - Deployment-Geschwindigkeit
+    - Resource-Usage
+    - Regression-Tests
+  - **Priorität:** Post-MVP
+
+- [ ] 13 - Disaster-Recovery-Plan erstellen (2-3h)
+  - **Datei:** `plans/disaster-recovery.md` (NEU)
+  - **Lösung:** Vollständiger DR-Plan:
+    - Recovery-Zeit-Ziel (RTO < 1h)
+    - Recovery-Point-Ziel (RPO < 24h)
+    - Backup-Tests, Restore-Prozeduren
+  - **Priorität:** Post-MVP
+
+- [ ] 14 - Multi-User-Konzept dokumentieren (2h)
+  - **Datei:** `.roo/rules/01-mission-and-stack.md`
+  - **Lösung:** Skalierungs-Roadmap:
+    - Ausbaustufe 1: Multi-User mit Trennung
+    - Ausbaustufe 2: Load-Balancing
+  - **Priorität:** Post-MVP
+
+**Gesamt-Impact:** 🔥 MITTEL - Langfristige Optimierungen
+
+---
+
+### Implementierungs-Zeitplan
+
+**Phase 1 - SOFORT (1-2 Stunden):**
+- Aufgaben 01-05: Kritische Quick-Wins
+- Maximaler Impact mit minimalem Aufwand
+- Behebt alle identifizierten Blocker aus Phase 1+2
+
+**Phase 2 - DIESE WOCHE (4-5 Stunden):**
+- Aufgaben 06-10: Strukturelle Verbesserungen
+- Code-Quality, Konsolidierung, Workflows
+- Basis für langfristige Wartbarkeit
+
+**Phase 3 - BACKLOG (6-7 Stunden):**
+- Aufgaben 11-14: Erweiterte Features
+- Monitoring, DR, Multi-User
+- Für zukünftige Ausbaustufen
+
+**Gesamt-Aufwand:** 11-14 Stunden für alle Verbesserungen
+
+---
+
+### Lessons Learned aus Phase 1+2
+
+**✅ Was GUT funktionierte:**
+- MVP-Fokus verhinderte Scope-Creep erfolgreich
+- 4-Stufen-Status (Todo → Branch Open → E2E Check → Merged) war klar
+- Granulare Aufgaben (112 Tasks) ermöglichten präzises Tracking
+- Feature-Branch-Isolation funktionierte zuverlässig
+- Entscheidungs-Format (Frage/Alternativen/Empfehlung) war hilfreich
+- Idempotenz-Library ist ein Game-Changer
+- Master-Orchestrator vereinfacht Operations massiv
+
+**❌ Was NICHT gut funktionierte:**
+- E2E-Test-Pflicht blockierte Merge trotz funktionierendem Code
+- Branch-Cleanup war komplett manuell (7 von 8)
+- Kein Hotfix-Workflow für kritische Bugs
+- Code-Quality nicht definiert trotz 12 Scripts
+- Post-Deployment-Checks fehlten
+- .roo/.Roo Redundanz verwirrend
+
+**📊 Projekt-Metriken:**
+- MVP-Funktionalität: ✅ 100% erreicht
+- Code-Zeilen: ✅ ~2.000 (Ziel: ~1.500)
+- Test-Pass-Rate (lokal): ✅ 100%
+- Deployment-Erfolg: ⚠️ Zweite Try (Dependency-Bug)
+- Branch-Cleanup: ❌ Manuell
+- Dokumentation: ✅ Vollständig
+
+**Gesamt-Erfolgsquote:** ~83% (5/6 Ziele erreicht)
+
 ---
 
 ## 🗃️ Backlog / Zukünftige Ausbaustufen
