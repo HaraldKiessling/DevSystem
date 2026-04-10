@@ -25,6 +25,13 @@
 set -euo pipefail
 
 # ============================================================================
+# IDEMPOTENZ-LIBRARY LADEN
+# ============================================================================
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/lib/idempotency.sh"
+
+# ============================================================================
 # KONFIGURATION UND KONSTANTEN
 # ============================================================================
 
@@ -63,6 +70,7 @@ readonly EXTENSIONS=(
 # LOGGING-FUNKTIONEN
 # ============================================================================
 
+# Logging in QS-Log-Datei (zusätzlich zur Idempotenz-Library)
 exec > >(tee -a "$QS_LOG_FILE")
 exec 2>&1
 
@@ -296,7 +304,9 @@ create_config_yaml() {
     
     log_step "Erstelle QS config.yaml..."
     
-    cat > "${config_file}" << EOF
+    # Erstelle neue Config in temporärer Datei
+    local temp_config="/tmp/code-server-config-qs-$$.yaml"
+    cat > "${temp_config}" << EOF
 # QS-VPS code-server Konfiguration - Quality Server
 # Generiert durch configure-code-server-qs.sh am $(date '+%Y-%m-%d %H:%M:%S')
 
@@ -315,8 +325,27 @@ user-data-dir: ${user_home}/.local/share/code-server
 extensions-dir: ${user_home}/.local/share/code-server/extensions
 EOF
     
+    # Prüfe ob Änderungen nötig sind (checksum-basiert)
+    if [ -f "${config_file}" ]; then
+        local old_checksum=$(idempotency::calculate_checksum "${config_file}")
+        local new_checksum=$(idempotency::calculate_checksum "${temp_config}")
+        
+        if [ "$old_checksum" = "$new_checksum" ]; then
+            log_success "QS config.yaml ist bereits aktuell (Checksum: ${old_checksum})."
+            rm -f "${temp_config}"
+            return 0
+        else
+            log_message "Config-Änderungen erkannt (alt: ${old_checksum}, neu: ${new_checksum})."
+        fi
+    fi
+    
+    # Config übernehmen
+    mv "${temp_config}" "${config_file}"
     chown "${CODE_SERVER_USER}:${CODE_SERVER_USER}" "${config_file}"
     chmod 600 "${config_file}"
+    
+    # State speichern
+    idempotency::save_state "code_server_qs_config" "checksum=$(idempotency::calculate_checksum "${config_file}")"
     
     log_success "QS config.yaml erstellt: ${config_file}"
     log_message "Berechtigungen: 600 (nur User lesbar)"
@@ -328,7 +357,9 @@ create_workspace_settings() {
     local user_home="/home/${CODE_SERVER_USER}"
     local settings_file="${user_home}/.local/share/code-server/User/settings.json"
     
-    cat > "${settings_file}" << 'EOF'
+    # Erstelle Settings in temporärer Datei
+    local temp_settings="/tmp/code-server-settings-qs-$$.json"
+    cat > "${temp_settings}" << 'EOF'
 {
   "workbench.colorTheme": "Default Dark Modern",
   "workbench.iconTheme": "vs-minimal",
@@ -375,8 +406,27 @@ create_workspace_settings() {
 }
 EOF
     
+    # Prüfe ob Änderungen nötig sind (checksum-basiert)
+    if [ -f "${settings_file}" ]; then
+        local old_checksum=$(idempotency::calculate_checksum "${settings_file}")
+        local new_checksum=$(idempotency::calculate_checksum "${temp_settings}")
+        
+        if [ "$old_checksum" = "$new_checksum" ]; then
+            log_success "QS Workspace-Settings sind bereits aktuell (Checksum: ${old_checksum})."
+            rm -f "${temp_settings}"
+            return 0
+        else
+            log_message "Settings-Änderungen erkannt (alt: ${old_checksum}, neu: ${new_checksum})."
+        fi
+    fi
+    
+    # Settings übernehmen
+    mv "${temp_settings}" "${settings_file}"
     chown "${CODE_SERVER_USER}:${CODE_SERVER_USER}" "${settings_file}"
     chmod 644 "${settings_file}"
+    
+    # State speichern
+    idempotency::save_state "code_server_qs_settings" "checksum=$(idempotency::calculate_checksum "${settings_file}")"
     
     log_success "QS Workspace-Settings erstellt: ${settings_file}"
 }
@@ -388,6 +438,13 @@ EOF
 install_extensions() {
     if [ "$INSTALL_EXTENSIONS" = false ]; then
         log_message "Extension-Installation übersprungen (--no-extensions)."
+        return 0
+    fi
+    
+    # Prüfe ob Extensions bereits installiert wurden
+    if idempotency::check_marker "code_server_qs_extensions_installed"; then
+        log_success "Extensions wurden bereits installiert (Marker gefunden)."
+        log_message "Nutze --force-redeploy zum erneuten Installieren."
         return 0
     fi
     
@@ -409,6 +466,12 @@ install_extensions() {
             ((failed_count++))
         fi
     done
+    
+    # Marker setzen (auch wenn einige fehlgeschlagen sind)
+    idempotency::set_marker "code_server_qs_extensions_installed"
+    
+    # State speichern
+    idempotency::save_state "code_server_qs_extensions" "installed=${installed_count} failed=${failed_count}"
     
     echo ""
     log_success "Extensions-Installation abgeschlossen:"
@@ -449,6 +512,9 @@ restart_service() {
     
     if systemctl restart code-server-qs 2>&1 | tee -a "$QS_LOG_FILE"; then
         log_success "Service erfolgreich neu gestartet."
+        
+        # Marker setzen
+        idempotency::set_marker "code_server_qs_service_restarted"
     else
         log_error "Fehler beim Neustart des Services."
         return 1
@@ -612,6 +678,13 @@ main() {
     
     # Zusammenfassung anzeigen
     show_summary
+    
+    # Finale Marker und State
+    idempotency::set_marker "code_server_qs_configured"
+    idempotency::save_state "code_server_qs_deployment" "timestamp=$(date -Iseconds) user=${CODE_SERVER_USER} port=${CODE_SERVER_PORT}"
+    
+    # Status-Report
+    idempotency::status_report "code-server-qs Konfiguration"
     
     log_success "QS-VPS: Konfiguration erfolgreich abgeschlossen!"
     exit 0
