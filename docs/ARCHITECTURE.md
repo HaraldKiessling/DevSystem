@@ -102,9 +102,9 @@ Siehe [`docs/concepts/sicherheitskonzept.md`](docs/concepts/sicherheitskonzept.m
 
 ## 📝 Weitere Dokumentation
 
-- [Konzepte](docs/concepts/) - Detaillierte Komponenten-Konzepte
-- [Deployment](docs/deployment/) - Deployment-Anleitungen
-- [Operations](docs/operations/) - Betriebs-Dokumentation
+- [Konzepte](concepts/) - Detaillierte Komponenten-Konzepte
+- [Deployment](deployment/) - Deployment-Anleitungen
+- [Operations](operations/) - Betriebs-Dokumentation
 - [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - Problem-Lösungen
 
 ---

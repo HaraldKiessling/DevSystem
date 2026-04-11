@@ -151,10 +151,10 @@ Siehe [`docs/concepts/qs-vps-konzept.md`](docs/concepts/qs-vps-konzept.md)
 
 ## 📖 Weitere Ressourcen
 
-- [ARCHITECTURE.md](ARCHITECTURE.md) - System-Architektur
+- [ARCHITECTURE.md](docs/ARCHITECTURE.md) - System-Architektur
 - [docs/operations/git-workflow.md](docs/operations/git-workflow.md) - Git-Best-Practices
 - [docs/strategies/](docs/strategies/) - Strategische Planung
-- [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - Problem-Lösungen
+- [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) - Problem-Lösungen
 
 ---
 

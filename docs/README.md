@@ -5,8 +5,20 @@ Willkommen zur DevSystem-Dokumentation. Dieses Verzeichnis enthält die gesamte 
 ## 📚 Dokumentations-Index
 
 ### 🏗️ Architektur
-- [`ARCHITECTURE.md`](../ARCHITECTURE.md) - System-Architektur-Übersicht (kommt in Phase 4)
-- [`architecture/`](architecture/) - Detaillierte Architektur-Dokumentation
+
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - System-Architektur und Komponenten-Übersicht
+
+### 📋 Projektmanagement
+
+Siehe [`project/`](project/) für Projekt-Planung und -Management:
+
+- **[VISION.md](project/VISION.md)** - Projekt-Vision, fachliche Anforderungen und Tech-Stack
+- **[PROJECT-RULES.md](project/PROJECT-RULES.md)** - Projekt-Regeln, Workflows und Anforderungen
+- **[todo.md](project/todo.md)** - Zentrale Aufgabenliste (wird zu GitHub Issues migriert)
+
+### 🔧 Support & Troubleshooting
+
+- **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Häufige Probleme und Lösungen
 
 ### 💡 Konzepte
 Technische Konzepte für Systemkomponenten:
@@ -50,19 +62,19 @@ Aktive Status-Reports und Optimierungen:
 
 ### Für neue Entwickler
 1. [`README.md`](../README.md) - Projekt-Übersicht
-2. [`ARCHITECTURE.md`](../ARCHITECTURE.md) - System-Architektur (Phase 4)
+2. [`ARCHITECTURE.md`](ARCHITECTURE.md) - System-Architektur (Phase 4)
 3. [`CONTRIBUTING.md`](../CONTRIBUTING.md) - Contribution-Guidelines (Phase 4)
 4. [`concepts/`](concepts/) - Technische Konzepte durchlesen
 
 ### Für Operations/DevOps
 1. [`deployment/`](deployment/) - Deployment-Guides
-2. [`TROUBLESHOOTING.md`](../TROUBLESHOOTING.md) - Problem-Lösungen (Phase 4)
+2. [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) - Problem-Lösungen (Phase 4)
 3. [`operations/`](operations/) - Git-Workflow und Branch-Strategie
 4. [`../scripts/`](../scripts/) - Deployment-Scripts
 
 ### Für Management/Product Owner
-1. [`../VISION.md`](../VISION.md) - Fachliche Anforderungen und Projekt-Vision
-2. [`../PROJECT-RULES.md`](../PROJECT-RULES.md) - System-Anforderungen und Projektregeln
+1. [`VISION.md`](project/VISION.md) - Fachliche Anforderungen und Projekt-Vision
+2. [`PROJECT-RULES.md`](project/PROJECT-RULES.md) - System-Anforderungen und Projektregeln
 3. [`strategies/`](strategies/) - Strategische Planung
 4. [`reports/`](reports/) - Status-Reports
 
@@ -84,7 +96,7 @@ Dokumentations-Updates werden in [`DOCUMENTATION-CHANGELOG.md`](DOCUMENTATION-CH
 ## 🔗 Weitere Ressourcen
 
 - [`CHANGELOG.md`](../CHANGELOG.md) - Projekt-Changelog (Phase 4)
-- [`todo.md`](../todo.md) - Aktive Tasks
+- [`todo.md`](project/todo.md) - Aktive Tasks
 - [`DOCUMENTATION-CHANGELOG.md`](DOCUMENTATION-CHANGELOG.md) - Dokumentations-Historie
 
 ## 📅 Letzte Aktualisierung

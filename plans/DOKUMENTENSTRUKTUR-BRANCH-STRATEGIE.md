@@ -1776,9 +1776,9 @@ git push origin docs/update-documentation-changelog
 ## 📚 Dokumentation
 
 ### Einstiegspunkte
-- [ARCHITECTURE.md](ARCHITECTURE.md) - System-Architektur
-- [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - Problem-Lösungen
-- [CONTRIBUTING.md](CONTRIBUTING.md) - Contribution-Guidelines
+- [ARCHITECTURE.md](../docs/ARCHITECTURE.md) - System-Architektur
+- [TROUBLESHOOTING.md](../docs/TROUBLESHOOTING.md) - Problem-Lösungen
+- [CONTRIBUTING.md](../CONTRIBUTING.md) - Contribution-Guidelines
 - [docs/](docs/) - Vollständige Dokumentation
 
 ### Letzte Aktualisierungen
