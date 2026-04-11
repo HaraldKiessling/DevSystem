@@ -102,5 +102,8 @@ htmlcov/
 .env.test.local
 .env.production.local
 
+# Backups directory
+backups/
+
 # Tailscale Auth Keys (sensibel)
 tailscale-authkey.txt

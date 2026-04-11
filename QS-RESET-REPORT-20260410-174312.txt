@@ -1,0 +1,37 @@
+QS-Services Reset Report
+========================
+Datum: 2026-04-10T17:43:12+00:00
+Script: reset-qs-services.sh v1.0.0
+
+Remote-Host: devsystem-qs-vps.tailcfea8a.ts.net
+Optionen:
+  - Preserve Qdrant: false
+  - Dry-Run: false
+
+Durchgeführte Aktionen:
+  ✓ Services gestoppt (caddy, code-server, qdrant)
+  ✓ Caddy-Daten entfernt
+  ✓ code-server-Daten entfernt (Auth-Hash bewahrt)
+  ✓ Qdrant-Daten entfernt
+  ✓ Deployment-Marker gelöscht
+  ✓ Deployment-State gelöscht
+  ✓ Systemd-Services entfernt
+
+Post-Reset Validierung:
+  ✓ Tailscale funktional
+  ✓ SSH-Verbindung aktiv
+  ✓ Services gestoppt
+
+BEWAHRTE KOMPONENTEN:
+  ✓ Tailscale (aktiv)
+  ✓ SSH-Konfiguration
+  ✓ UFW-Regeln
+  ✓ fail2ban
+  ✓ code-server Auth-Hashes
+
+
+Nächste Schritte:
+  1. Neuinitialisierung via setup-qs-master.sh
+  2. Service-Validierung (Ports 9443, 8080, 6333)
+
+Status: ✅ ERFOLGREICH

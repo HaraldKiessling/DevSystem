@@ -38,14 +38,8 @@ source "${SCRIPT_DIR}/lib/idempotency.sh"
 # !!! WICHTIG: Diese Variable MUSS vor der Ausführung gesetzt werden !!!
 QS_CODE_SERVER_PASSWORD="QS_CODE_SERVER_PASSWORD"
 
-# Farbdefinitionen
-readonly RED='\033[0;31m'
-readonly GREEN='\033[0;32m'
-readonly YELLOW='\033[0;33m'
-readonly BLUE='\033[0;34m'
-readonly CYAN='\033[0;36m'
-readonly MAGENTA='\033[0;35m'
-readonly NC='\033[0m'
+# HINWEIS: Farbdefinitionen werden von lib/idempotency.sh bereitgestellt
+# Die Library exportiert: RED, GREEN, YELLOW, BLUE, CYAN, MAGENTA, WHITE, BOLD, NC
 
 # Verzeichnisse und Dateien
 readonly BACKUP_DIR_DEFAULT="/var/backups/code-server-qs"
@@ -173,7 +167,25 @@ check_root() {
 check_password_placeholder() {
     log_step "Prüfe QS_CODE_SERVER_PASSWORD..."
     
+    local config_file="/home/${CODE_SERVER_USER}/.config/code-server/config.yaml"
+    
+    # Wenn Placeholder nicht ersetzt wurde
     if [ "$QS_CODE_SERVER_PASSWORD" = "QS_CODE_SERVER_PASSWORD" ]; then
+        # Prüfe ob bereits eine Config existiert (Idempotenz)
+        if [ -f "$config_file" ]; then
+            # Extrahiere vorhandenes Passwort aus Config
+            local existing_password=$(grep '^password:' "$config_file" | awk '{print $2}' || echo "")
+            if [ -n "$existing_password" ]; then
+                log_warning "QS_CODE_SERVER_PASSWORD nicht gesetzt, aber Config existiert bereits."
+                log_info "Verwende bestehendes Passwort aus Config (Idempotenz)."
+                # Überschreibe Placeholder mit bestehendem Passwort
+                QS_CODE_SERVER_PASSWORD="$existing_password"
+                log_success "Bestehendes Passwort wird beibehalten."
+                return 0
+            fi
+        fi
+        
+        # Keine Config vorhanden - Abbruch erforderlich
         error_exit "QS_CODE_SERVER_PASSWORD wurde nicht gesetzt! Bitte ersetze den Platzhalter vor der Ausführung."
     fi
     
@@ -208,12 +220,16 @@ check_user_exists() {
 
 check_service_exists() {
     log_step "Prüfe ob code-server-qs-Service existiert..."
-    
-    if ! systemctl list-unit-files | grep -q "code-server-qs.service"; then
+
+    # Robuster Check mit explizitem Exit-Code-Handling (pipefail-safe)
+    # Speichere grep's Exit-Code explizit, um pipefail zu umgehen
+    local service_list
+    service_list=$(systemctl list-unit-files 2>/dev/null || true)
+    if echo "$service_list" | grep -q "code-server-qs.service"; then
+        log_success "code-server-qs-Service existiert."
+    else
         error_exit "code-server-qs-Service existiert nicht. Bitte führe zuerst 'install-code-server-qs.sh' aus."
     fi
-    
-    log_success "code-server-qs-Service existiert."
 }
 
 # ============================================================================
@@ -450,20 +466,42 @@ install_extensions() {
     
     log_step "Installiere VS Code Extensions für QS-VPS..."
     
+    # Hole Liste der bereits installierten Extensions (pipefail-safe)
+    local installed_extensions
+    installed_extensions=$(su - "${CODE_SERVER_USER}" -c "code-server --list-extensions" 2>/dev/null || true)
+    
     local installed_count=0
+    local skipped_count=0
     local failed_count=0
     local failed_extensions=()
     
     for ext in "${EXTENSIONS[@]}"; do
+        # Prüfe ob Extension bereits installiert ist
+        if echo "$installed_extensions" | grep -q "^${ext}$"; then
+            log_success "  ✓ ${ext} bereits installiert (überspringe)"
+            skipped_count=$((skipped_count + 1))
+            installed_count=$((installed_count + 1))
+            continue
+        fi
+        
         log_message "Installiere Extension: ${ext}"
         
+        # Installation mit explizitem Error-Handling (pipefail-safe)
         if su - "${CODE_SERVER_USER}" -c "code-server --install-extension ${ext} --force" >> "$QS_LOG_FILE" 2>&1; then
-            log_success "  ✓ ${ext} installiert"
-            ((installed_count++))
+            log_success "  ✓ ${ext} erfolgreich installiert"
+            installed_count=$((installed_count + 1))
         else
-            log_warning "  ✗ ${ext} konnte nicht installiert werden"
-            failed_extensions+=("${ext}")
-            ((failed_count++))
+            # Bei Fehler: Prüfe ob Extension trotzdem installiert wurde (race condition)
+            local recheck_extensions
+            recheck_extensions=$(su - "${CODE_SERVER_USER}" -c "code-server --list-extensions" 2>/dev/null || true)
+            if echo "$recheck_extensions" | grep -q "^${ext}$"; then
+                log_success "  ✓ ${ext} installiert (trotz warning)"
+                installed_count=$((installed_count + 1))
+            else
+                log_warning "  ✗ ${ext} konnte nicht installiert werden"
+                failed_extensions+=("${ext}")
+                failed_count=$((failed_count + 1))
+            fi
         fi
     done
     
@@ -471,11 +509,13 @@ install_extensions() {
     idempotency::set_marker "code_server_qs_extensions_installed"
     
     # State speichern
-    idempotency::save_state "code_server_qs_extensions" "installed=${installed_count} failed=${failed_count}"
+    idempotency::save_state "code_server_qs_extensions" "installed=${installed_count} skipped=${skipped_count} failed=${failed_count}"
     
     echo ""
     log_success "Extensions-Installation abgeschlossen:"
-    log_message "  • Erfolgreich installiert: ${installed_count}"
+    log_message "  • Erfolgreich installiert: $((installed_count - skipped_count))"
+    log_message "  • Bereits vorhanden: ${skipped_count}"
+    log_message "  • Gesamt aktiv: ${installed_count}"
     
     if [ $failed_count -gt 0 ]; then
         log_warning "  • Fehlgeschlagen: ${failed_count}"
