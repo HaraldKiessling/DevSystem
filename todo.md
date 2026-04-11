@@ -67,9 +67,9 @@ Keine aktiven MVP-Aufgaben - MVP ist vollständig abgeschlossen! 🎉
   - **Ursache:** GitHub UI/Backend-Problem oder verborgene Branch Protection Rule
   - **Impact:** MINIMAL - main Branch ist funktionsfähig, keine funktionalen Einschränkungen
   - **Dokumentation:**
-    - [`GIT-BRANCH-CLEANUP-REPORT.md`](GIT-BRANCH-CLEANUP-REPORT.md) - Vollständiger Bericht
-    - [`GITHUB-DEFAULT-BRANCH-TROUBLESHOOTING.md`](GITHUB-DEFAULT-BRANCH-TROUBLESHOOTING.md) - Troubleshooting-Guide
-    - [`BRANCH-DELETION-VIA-GITHUB-UI.md`](BRANCH-DELETION-VIA-GITHUB-UI.md) - Alternative Lösung
+    - [`GIT-BRANCH-CLEANUP-REPORT.md`](docs/archive/git-branch-cleanup/GIT-BRANCH-CLEANUP-REPORT.md) - Vollständiger Bericht
+    - [`GITHUB-DEFAULT-BRANCH-TROUBLESHOOTING.md`](docs/archive/git-branch-cleanup/GITHUB-DEFAULT-BRANCH-TROUBLESHOOTING.md) - Troubleshooting-Guide
+    - [`BRANCH-DELETION-VIA-GITHUB-UI.md`](docs/archive/git-branch-cleanup/BRANCH-DELETION-VIA-GITHUB-UI.md) - Alternative Lösung
   - **Lösungswege:**
     1. **GitHub CLI verwenden:** `gh api --method PATCH /repos/HaraldKiessling/DevSystem -f default_branch='main'`
     2. **GitHub Support kontaktieren:** https://support.github.com/
@@ -92,9 +92,9 @@ Keine aktiven MVP-Aufgaben - MVP ist vollständig abgeschlossen! 🎉
 Vollautomatisierte QS-VPS-Deployments mit idempotenten Scripts über GitHub Actions. Ermöglicht Deployments vom Handy aus.
 
 **Dokumentation:**
-- [`plans/qs-github-integration-strategie.md`](plans/qs-github-integration-strategie.md) - Architektur & Strategie
-- [`plans/qs-implementierungsplan-final.md`](plans/qs-implementierungsplan-final.md) - Detaillierter Implementierungsplan
-- [`plans/QS-STRATEGY-SUMMARY.md`](plans/QS-STRATEGY-SUMMARY.md) - Executive Summary
+- [`qs-github-integration-strategie.md`](docs/strategies/qs-github-integration-strategie.md) - Architektur & Strategie
+- [`qs-implementierungsplan-final.md`](docs/strategies/qs-implementierungsplan-final.md) - Detaillierter Implementierungsplan
+- [`qs-strategy-summary.md`](docs/strategies/qs-strategy-summary.md) - Executive Summary
 
 **Geschätzter Gesamtaufwand:** 23-33 Stunden
 
@@ -107,7 +107,7 @@ Vollautomatisierte QS-VPS-Deployments mit idempotenten Scripts über GitHub Acti
 - ✅ Test-Suite vollständig (`scripts/qs/test-idempotency-lib.sh`)
 - ✅ **ALLE 7 Scripts** nutzen Library (100% Integration)
 - ❌ **E2E-Tests blockiert durch SSH-Problem** (Port 22 deaktiviert)
-- 📄 **Dokumentation:** [`PHASE1-IDEMPOTENZ-STATUS.md`](PHASE1-IDEMPOTENZ-STATUS.md)
+- 📄 **Dokumentation:** [`PHASE1-IDEMPOTENZ-STATUS.md`](docs/archive/phases/PHASE1-IDEMPOTENZ-STATUS.md)
 
 #### 1.1 Feature-Branch & Vorbereitung
 - [x] 01 - Feature-Branch erstellt: `feature/qs-github-integration`
@@ -145,7 +145,7 @@ Vollautomatisierte QS-VPS-Deployments mit idempotenten Scripts über GitHub Acti
 - [Blocked] 25-30 - E2E-Tests gegen VPS - **BLOCKIERT durch SSH-Problem**
   - Test-Versuch durchgeführt: `bash scripts/qs/run-e2e-tests.sh --host=100.100.221.56`
   - **Fehler:** Connection refused (Port 22)
-  - **Problem dokumentiert in:** [`vps-test-results-phase1-e2e.md`](vps-test-results-phase1-e2e.md)
+  - **Problem dokumentiert in:** [`vps-test-results-phase1-e2e.md`](docs/archive/test-results/vps-test-results-phase1-e2e.md)
   - **Offene Entscheidung:** Siehe Abschnitt "Offene Entscheidungen" unten
 - [x] 31 - Test-Ergebnisse dokumentiert (SSH-Blocker)
 - [x] 32 - Code bereit zum Commit (wartet auf E2E-Success)
@@ -155,7 +155,7 @@ Vollautomatisierte QS-VPS-Deployments mit idempotenten Scripts über GitHub Acti
 ### Phase 2: Master-Orchestrator (6-8h) - STATUS: ✅ ABGESCHLOSSEN
 
 **Ziel:** Zentrale Steuerung aller Deployment-Stages
-**Dokumentation:** [`PHASE2-ORCHESTRATOR-STATUS.md`](PHASE2-ORCHESTRATOR-STATUS.md)
+**Dokumentation:** [`PHASE2-ORCHESTRATOR-STATUS.md`](docs/archive/phases/PHASE2-ORCHESTRATOR-STATUS.md)
 
 #### 2.1 Master-Script erstellen ✅
 - [x] 33 - `scripts/qs/setup-qs-master.sh` erstellt (1036 Zeilen)

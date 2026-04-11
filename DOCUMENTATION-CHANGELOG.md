@@ -4,6 +4,170 @@ Chronologische Aufzeichnung aller Änderungen an der Projektdokumentation.
 
 ---
 
+## 2026-04-11 - Große Dokumentations-Konsolidierung v1.0 ✅
+
+**Status:** ✅ ABGESCHLOSSEN
+**Branch:** `docs/consolidation-v1.0`
+**Referenz:** [`plans/DOKUMENTENSTRUKTUR-BRANCH-STRATEGIE.md`](plans/DOKUMENTENSTRUKTUR-BRANCH-STRATEGIE.md)
+
+### Durchgeführte Änderungen
+
+#### ✅ Phase 1: Archiv-Infrastruktur erstellt
+- Neue Verzeichnisstruktur: `docs/{archive,architecture,concepts,deployment,operations,strategies,reports}`
+- Archiv-Unterstruktur: `phases`, `test-results`, `git-branch-cleanup`, `troubleshooting`, `concepts`, `retrospectives`, `reports`
+- `docs/archive/README.md` mit Archivierungs-Policy
+- `docs/README.md` mit Dokumentations-Index
+
+**Commit:** `docs: erstelle Archiv-Infrastruktur und neue Verzeichnisstruktur`
+
+#### ✅ Phase 2: Duplikate eliminiert (-6 Dateien)
+
+**code-server-Konzept** (3 → 1 Datei):
+- ✅ BEHALTEN: `plans/code-server-konzept.md` (von vollstaendig)
+- ✅ ARCHIVIERT: `docs/archive/concepts/code-server-konzept-v1.md`
+- ✅ ARCHIVIERT: `docs/archive/concepts/code-server-konzept-v1-teil2.md`
+
+**testkonzept** (3 → 1 Datei):
+- ✅ BEHALTEN: `plans/testkonzept.md` (von final)
+- ✅ ARCHIVIERT: `docs/archive/concepts/testkonzept-v1.md`
+- ✅ ARCHIVIERT: `docs/archive/concepts/testkonzept-v2.md`
+
+**Commit:** `docs: konsolidiere Duplikate (code-server, testkonzept) -6 Dateien`
+
+#### ✅ Phase 3: Dokumente archiviert (24 Dateien)
+
+**Phase-Reports** (4) → `docs/archive/phases/`:
+- DEPLOYMENT-SUCCESS-PHASE1-2.md
+- MERGE-SUMMARY-PHASE1-2.md
+- PHASE1-IDEMPOTENZ-STATUS.md
+- PHASE2-ORCHESTRATOR-STATUS.md
+
+**Test-Results** (8) → `docs/archive/test-results/`:
+- vps-test-results.md, vps-test-results-caddy.md
+- vps-test-results-code-server.md, vps-test-results-phase1-e2e.md
+- vps-test-results-qs-manual.md, caddy-e2e-validation.md
+- P0.2-E2E-VALIDATION-REPORT.md, REFACTORING-TEST-RESULTS.md
+
+**Git-Branch-Cleanup** (6) → `docs/archive/git-branch-cleanup/`:
+- GIT-BRANCH-CLEANUP-REPORT.md, GIT-BRANCH-CLEANUP-FINAL.md
+- BRANCH-DELETION-VIA-GITHUB-UI.md
+- GITHUB-DEFAULT-BRANCH-ANLEITUNG.md, GITHUB-DEFAULT-BRANCH-TROUBLESHOOTING.md
+- GIT-SYNC-REPORT-QS-VPS.md
+
+**Troubleshooting** (3) → `docs/archive/troubleshooting/`:
+- CADDY-SCRIPT-DEBUG-REPORT.md, EXTENSION-LOOP-FIX-REPORT.md
+- plans/vps-korrekturen-ergebnisse.md
+
+**Retrospectives** (1) → `docs/archive/retrospectives/`:
+- ROO-RULES-IMPROVEMENTS-PHASE1.md
+
+**Reports** (2) → `docs/archive/reports/`:
+- QS-SYSTEM-VALIDATION-STEP4.md
+- QS-SYSTEM-PERFORMANCE-METRICS.md
+
+**Commit:** `docs: archiviere 23 historische Dokumente`
+
+#### ✅ Phase 3b: Aktive Dokumente strukturiert (22 Dateien verschoben)
+
+**Strategien** → `docs/strategies/`:
+- qs-github-integration-strategie.md, qs-implementierungsplan-final.md
+- QS-STRATEGY-SUMMARY.md, branch-strategie.md, deployment-prozess.md
+
+**Konzepte** → `docs/concepts/`:
+- caddy-konzept.md, tailscale-konzept.md, ki-integration-konzept.md
+- qs-vps-konzept.md, sicherheitskonzept.md, implementierungsplan.md
+- code-server-konzept.md, testkonzept.md
+
+**Deployment** → `docs/deployment/`:
+- vps-deployment-caddy.md, vps-deployment-qdrant.md
+- vps-deployment-qdrant-complete.md
+
+**Operations** → `docs/operations/`:
+- VPS-SSH-FIX-GUIDE.md, git-workflow.md
+
+**Reports** → `docs/reports/`:
+- DevSystem-Implementation-Status.md
+- optimization/ (QS-SYSTEM-OPTIMIZATION-*, CODE-REVIEW-REPORT-STEP3)
+
+**Commit:** `docs: strukturiere aktive Dokumente in neue Verzeichnisse`
+
+#### ✅ Phase 4: Neue Kern-Dokumentation erstellt (4 Dateien)
+
+- ✅ **ARCHITECTURE.md**: System-Architektur-Übersicht (Stub mit TODOs)
+- ✅ **TROUBLESHOOTING.md**: Konsolidierter Troubleshooting-Guide (Stub)
+- ✅ **CONTRIBUTING.md**: Contribution-Guidelines (Stub)
+- ✅ **CHANGELOG.md**: Versions-Historie initialisiert mit v1.0.0
+
+Alle als Stubs mit klaren TODOs für iterative Vervollständigung.
+
+**Commit:** `docs: erstelle neue Kern-Dokumentation (Stubs für spätere Vervollständigung)`
+
+#### ✅ Phase 5: DOCUMENTATION-CHANGELOG.md aktualisiert
+
+Dieser Eintrag dokumentiert die abgeschlossene Konsolidierung.
+
+---
+
+### Statistiken (Vorher/Nachher)
+
+| Metrik | Vorher | Nachher | Änderung |
+|--------|--------|---------|----------|
+| **Aktive Dokumente (Root)** | ~40 | ~15 | -25 (-62%) |
+| **Duplikate** | 6 | 0 | -6 (-100%) |
+| **Archivierte Dokumente** | 0 | 24 | +24 |
+| **Neue Kern-Docs** | 0 | 4 | +4 |
+| **Strukturierte Konzepte** | 0 | 8 | +8 in docs/concepts/ |
+
+**Reduzierung Root-Level Clutter:** 62%
+**Keine Informationsverluste:** Alle Dateien im Repository erhalten (Archiv)
+
+---
+
+### Git-Commits (Branch: docs/consolidation-v1.0)
+
+1. ✅ `0a43505` - docs: erstelle Archiv-Infrastruktur und neue Verzeichnisstruktur
+2. ✅ `0b15aa0` - docs: konsolidiere Duplikate (code-server, testkonzept) -6 Dateien
+3. ✅ `5d9fced` - docs: archiviere 23 historische Dokumente
+4. ✅ `d8a9618` - docs: strukturiere aktive Dokumente in neue Verzeichnisse
+5. ✅ `13334ed` - docs: erstelle neue Kern-Dokumentation (Stubs für spätere Vervollständigung)
+6. ✅ (aktuell) - docs: aktualisiere DOCUMENTATION-CHANGELOG und todo.md
+
+**Nächster Schritt:** Pull Request erstellen und in `main` mergen
+
+---
+
+### Breaking Changes
+
+**Status:** ❌ Keine funktionalen Breaking Changes
+
+**Hinweise:**
+- Externe Links zu verschobenen Dateien müssen manuell aktualisiert werden
+- Interne Referenzen in dokumentierter Struktur klar erkennbar
+
+---
+
+### Migration-Guide
+
+#### Wichtige Pfad-Änderungen:
+
+```
+Alt: plans/code-server-konzept-vollstaendig.md
+Neu: plans/code-server-konzept.md
+
+Alt: plans/testkonzept-final.md
+Neu: plans/testkonzept.md
+
+Alt: PHASE1-IDEMPOTENZ-STATUS.md
+Neu: docs/archive/phases/PHASE1-IDEMPOTENZ-STATUS.md
+
+Alt: plans/caddy-konzept.md
+Neu: docs/concepts/caddy-konzept.md
+```
+
+Vollständige Mappings siehe [`plans/DOKUMENTENSTRUKTUR-BRANCH-STRATEGIE.md`](plans/DOKUMENTENSTRUKTUR-BRANCH-STRATEGIE.md)
+
+---
+
 ## 2026-04-10 - Große Dokumentations-Konsolidierung (GEPLANT)
 
 **Status:** 🚧 In Planung  
