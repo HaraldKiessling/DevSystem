@@ -1,4 +1,6 @@
-System- und Projektanforderungen
+# DevSystem - Project Rules
+
+## System- und Projektanforderungen
 1. Infrastruktur & Zielsystem
 Host: Ubuntu VPS bei IONOS.
 Netzwerkzugang: Initialer Root-Zugriff per SSH erfolgt ausschließlich über Tailscale.
