@@ -27,6 +27,18 @@ Alte Versionen konsolidierter Konzepte
 - Code-server-Konzept (Duplikate, Teildokumente)
 - Testkonzept (alte Versionen)
 
+### `setup/`
+Historische Setup-Dokumentation
+- InitPrompt (v1) - Original-Setup-Instructions
+
+### `procedures/`
+Gelöste temporäre Workarounds
+- PR-Creation-Instructions (Problem gelöst durch .github/PULL_REQUEST_TEMPLATE.md)
+
+### `pull-requests/`
+Archivierte PR-Templates
+- Spezifisches PR-Template für QS-Optimization (als Referenz-Beispiel)
+
 ### `retrospectives/`
 Archivierte Lessons Learned und Retrospektiven
 - Phase-spezifische Verbesserungsvorschläge
@@ -60,7 +72,7 @@ Links zu archivierten Dokumenten sollten auf dieses Archiv-Verzeichnis zeigen.
 
 ## 📅 Letzte Aktualisierung
 
-**2026-04-11** - Initiale Archivierung im Rahmen der großen Dokumentations-Konsolidierung (siehe [`DOCUMENTATION-CHANGELOG.md`](../../DOCUMENTATION-CHANGELOG.md))
+**2026-04-11** - Post-Konsolidierungs-Cleanup mit zusätzlichen Archivierungen (siehe [`DOCUMENTATION-CHANGELOG.md`](../DOCUMENTATION-CHANGELOG.md))
 
 ## 📊 Archivierungs-Statistik
 
@@ -71,4 +83,4 @@ Links zu archivierten Dokumenten sollten auf dieses Archiv-Verzeichnis zeigen.
 - **Concepts (alte Versionen)**: 2 Dokumente
 - **Retrospectives**: 1 Dokument
 
-**Gesamt**: 23+ archivierte Dokumente
+**Gesamt**: 30+ archivierte Dokumente (inkl. Setup, Procedures, PR-Templates)
