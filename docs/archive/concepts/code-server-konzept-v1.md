@@ -821,4 +821,5 @@ Für eine verbesserte Performance durch Caching empfehlen wir folgende Maßnahme
   "files.useExperimentalFileWatcher": true,
   "search.followSymlinks": false,
   "search.useIgnoreFiles": true,
-  "search.useG
+  "search.useGlobalIgnoreFiles": true,
+  "search.useParentIgnoreFiles":

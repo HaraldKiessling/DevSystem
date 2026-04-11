@@ -670,4 +670,4 @@ for domain in "${DOMAINS[@]}"; do
     
     # Überprüfen, wie lange das Zertifikat noch gültig ist
     days_left=$(( ($expiry_time - $current_time) / 86400 ))
-    echo "  Noch $days_
+    echo "
