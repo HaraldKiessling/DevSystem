@@ -61,8 +61,8 @@ Aktive Status-Reports und Optimierungen:
 4. [`../scripts/`](../scripts/) - Deployment-Scripts
 
 ### Für Management/Product Owner
-1. [`../DevSystem.md`](../DevSystem.md) - Fachliche Anforderungen
-2. [`../SystemProject.md`](../SystemProject.md) - System-Anforderungen
+1. [`../VISION.md`](../VISION.md) - Fachliche Anforderungen und Projekt-Vision
+2. [`../PROJECT-RULES.md`](../PROJECT-RULES.md) - System-Anforderungen und Projektregeln
 3. [`strategies/`](strategies/) - Strategische Planung
 4. [`reports/`](reports/) - Status-Reports
 
@@ -79,13 +79,13 @@ Aktive Status-Reports und Optimierungen:
 - Archivierte Versionen: `[name]-v[nummer].md` (z.B. `testkonzept-v1.md`)
 
 ### Updates
-Dokumentations-Updates werden in [`DOCUMENTATION-CHANGELOG.md`](../DOCUMENTATION-CHANGELOG.md) erfasst.
+Dokumentations-Updates werden in [`DOCUMENTATION-CHANGELOG.md`](DOCUMENTATION-CHANGELOG.md) erfasst.
 
 ## 🔗 Weitere Ressourcen
 
 - [`CHANGELOG.md`](../CHANGELOG.md) - Projekt-Changelog (Phase 4)
 - [`todo.md`](../todo.md) - Aktive Tasks
-- [`DOCUMENTATION-CHANGELOG.md`](../DOCUMENTATION-CHANGELOG.md) - Dokumentations-Historie
+- [`DOCUMENTATION-CHANGELOG.md`](DOCUMENTATION-CHANGELOG.md) - Dokumentations-Historie
 
 ## 📅 Letzte Aktualisierung
 

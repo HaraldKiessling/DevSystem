@@ -508,7 +508,7 @@ Der QS-VPS gilt als erfolgreich implementiert, wenn:
 
 ### 12.3 Relevante Dokumentation
 
-- [`DevSystem.md`](../DevSystem.md) - Haupt-Architektur
+- [`VISION.md`](../../VISION.md) - Projekt-Vision und Fachliche Anforderungen
 - [`todo.md`](../todo.md) - Projekt-Status
 - [`plans/implementierungsplan.md`](implementierungsplan.md) - Implementierungs-Roadmap
 - [`plans/tailscale-konzept.md`](tailscale-konzept.md) - Tailscale-Details
