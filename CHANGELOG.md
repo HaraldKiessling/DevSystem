@@ -147,7 +147,7 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 - [Dokumentation](docs/)
 - [Deployment-Guides](docs/deployment/)
-- [ARCHITECTURE.md](ARCHITECTURE.md)
+- [ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ---

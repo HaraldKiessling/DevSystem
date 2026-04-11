@@ -367,9 +367,9 @@ QS-RESET-REPORT-20260410-174312.txt
    - Phase-Reports: `PHASE1-*.md` → `docs/archive/phases/PHASE1-*.md`
 
 3. **Neue Dokumentation:**
-   - System-Architektur: [`ARCHITECTURE.md`](ARCHITECTURE.md)
-   - Troubleshooting: [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md)
-   - Archiv-Übersicht: [`docs/archive/README.md`](docs/archive/README.md)
+   - System-Architektur: [`ARCHITECTURE.md`](../ARCHITECTURE.md)
+   - Troubleshooting: [`TROUBLESHOOTING.md`](../TROUBLESHOOTING.md)
+   - Archiv-Übersicht: [`docs/archive/README.md`](archive/README.md)
 
 #### Für externe Referenzen:
 Externe Tools/Bookmarks, die auf archivierte Dateien verweisen, müssen manuell aktualisiert werden:
