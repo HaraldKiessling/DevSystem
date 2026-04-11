@@ -16,6 +16,35 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ---
 
+## [1.1.0] - 2026-04-11
+
+### Added
+- README.md mit vollständiger Projekt-Übersicht
+- LICENSE (MIT) für rechtliche Klarheit
+- Generalisiertes PR-Template in .github/
+- VISION.md (umbenannt von DevSystem.md für Klarheit)
+- PROJECT-RULES.md (umbenannt von SystemProject.md für Klarheit)
+
+### Changed
+- Archiviert temporäre/historische Dateien (InitPrompt, PR-Instructions, QS-Reset-Report)
+- DOCUMENTATION-CHANGELOG.md nach docs/ verschoben
+- Root-Verzeichnis von 13 auf 9 Dokumente reduziert (-31%)
+- Verbesserte GitHub-Konformität (Best-Practice-Score: 86% → 90%+)
+- PULL_REQUEST_TEMPLATE.md von Root nach .github/ verschoben (GitHub Best Practice)
+
+### Removed
+- Temporäre Workaround-Dokumentation aus Root
+- Spezifisches PR-Template aus Root (ersetzt durch generalisiertes)
+- Historische Setup-Dateien aus Root (ins Archiv verschoben)
+
+### Documentation
+- Post-Konsolidierungs-Cleanup abgeschlossen
+- Root-Verzeichnis optimiert für bessere Übersichtlichkeit
+- Alle temporären Dateien systematisch archiviert
+- Referenzen zu umbenannten Dateien aktualisiert
+
+---
+
 ## [1.0.0] - 2026-04-11
 
 ### Added - Neue Features
@@ -97,4 +126,4 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ---
 
-**Hinweis**: Detaillierte Dokumentations-Änderungen siehe [DOCUMENTATION-CHANGELOG.md](DOCUMENTATION-CHANGELOG.md)
+**Hinweis**: Detaillierte Dokumentations-Änderungen siehe [DOCUMENTATION-CHANGELOG.md](docs/DOCUMENTATION-CHANGELOG.md)
