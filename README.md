@@ -87,9 +87,9 @@ DevSystem besteht aus folgenden Kernkomponenten:
 
 ### Übersichtsdokumente
 
-- **[ARCHITECTURE.md](ARCHITECTURE.md)** - System-Architektur und Komponenten-Übersicht
+- **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** - System-Architektur und Komponenten-Übersicht
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** - Contribution-Guidelines und Entwicklungs-Workflow
-- **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Häufige Probleme und Lösungen
+- **[TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)** - Häufige Probleme und Lösungen
 - **[CHANGELOG.md](CHANGELOG.md)** - Versions-Historie und Änderungen
 
 ### Detaillierte Dokumentation
@@ -185,7 +185,7 @@ Dieses Projekt ist lizenziert unter der MIT License - siehe [LICENSE](LICENSE) f
 
 - **Issues**: [GitHub Issues](https://github.com/[YOUR-USERNAME]/DevSystem/issues)
 - **Dokumentation**: [docs/](docs/)
-- **Troubleshooting**: [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+- **Troubleshooting**: [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
 
 ---
 

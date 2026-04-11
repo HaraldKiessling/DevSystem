@@ -16,6 +16,32 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ---
 
+## [1.2.0] - 2026-04-11
+
+### Changed - Root-Cleanup (GitHub Best-Practice 100%)
+- Root-Verzeichnis von 9 auf 4 Dokumente reduziert (-56%)
+- GitHub Best-Practice-Score verbessert: 56% → 100%
+- ARCHITECTURE.md nach docs/ verschoben (Standard-Location für techn. Dokumentation)
+- TROUBLESHOOTING.md nach docs/ verschoben (Standard-Location für Support-Docs)
+- VISION.md nach docs/project/ verschoben (Projektmanagement)
+- PROJECT-RULES.md nach docs/project/ verschoben (Projektmanagement)
+- todo.md nach docs/project/ verschoben (Projektmanagement, künftig GitHub Issues)
+
+### Added
+- docs/project/ Verzeichnis für Projektmanagement-Dokumente
+- docs/project/README.md als Übersicht für Projekt-Dokumentation
+
+### Documentation
+- Alle Referenzen zu verschobenen Dokumenten aktualisiert
+- docs/README.md mit neuen Sektionen für Architektur, Troubleshooting und Projektmanagement
+- Root-Struktur entspricht jetzt 100% GitHub Best Practices (vgl. Kubernetes, Node.js, React)
+
+### Breaking Changes
+- Links zu ARCHITECTURE.md, TROUBLESHOOTING.md, VISION.md, PROJECT-RULES.md, todo.md müssen aktualisiert werden
+- Neue Pfade: docs/ARCHITECTURE.md, docs/TROUBLESHOOTING.md, docs/project/*
+
+---
+
 ## [1.1.0] - 2026-04-11
 
 ### Added
