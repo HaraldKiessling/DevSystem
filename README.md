@@ -98,6 +98,7 @@ DevSystem besteht aus folgenden Kernkomponenten:
 docs/
 ├── concepts/           # Konzepte und Designs der Kernkomponenten
 ├── deployment/         # Deployment-Anleitungen und Cloud-Init-Scripts
+├── e2e-tests/          # Umfassende End-to-End-Tests für alle Komponenten
 ├── operations/         # Betriebs-Dokumentation (Git-Workflow, SSH-Fixes)
 ├── strategies/         # Strategische Dokumente (Branch-Strategie, QS-Prozess)
 └── reports/            # Status-Reports und Optimierungs-Analysen
@@ -160,7 +161,7 @@ Wir freuen uns über Contributions! Bitte lies zunächst [CONTRIBUTING.md](CONTR
 
 **Wichtige Regeln:**
 - Feature-Branches für alle Entwicklungen
-- Merge in `main` nur nach erfolgreichem E2E-Test
+- Merge in `main` nur nach erfolgreichem E2E-Test (siehe `/scripts/e2e-tests/`)
 - Konzept-Dokumente dürfen direkt in `main` committed werden
 
 ---

@@ -9,6 +9,16 @@ und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Added
+- Integrierte E2E-Tests für code-server (`/scripts/e2e-tests/`)
+- Skripte für automatisierte Testausführung
+- Testsuiten für PWA-Funktionalität, Tailscale-Integration und Log-Validierung
+- Support für benutzerdefinierte Testparameter
+
+### Changed
+- Repository-Struktur bereinigt
+- Feature-Branch-Workflow optimiert
+
 ### In Planung
 - Ollama-Integration für lokale KI-Models
 - Monitoring & Observability
