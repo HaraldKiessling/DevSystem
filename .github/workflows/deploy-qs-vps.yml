@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       deployment_mode:
-        description: 'Deployment Mode'
+        description: "Deployment Mode"
         required: true
-        default: 'normal'
+        default: "normal"
         type: choice
         options:
           - normal
@@ -14,7 +14,7 @@ on:
           - dry-run
           - rollback
       component:
-        description: 'Specific component (leave empty for all)'
+        description: "Specific component (leave empty for all)"
         required: false
         type: string
 
@@ -22,37 +22,36 @@ on:
     branches:
       - main
     paths:
-      - 'scripts/qs/**'
-      - '.github/workflows/deploy-qs-vps.yml'
+      - "scripts/qs/**"
+      - ".github/workflows/deploy-qs-vps.yml"
 
 jobs:
   deploy:
     name: Deploy to QS-VPS
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Setup Tailscale (OAuth)
         id: tailscale_oauth
-        if: ${{ secrets.TAILSCALE_OAUTH_CLIENT_ID != '' }}
         continue-on-error: true
         uses: tailscale/github-action@v2
         with:
           oauth-client-id: ${{ secrets.TAILSCALE_OAUTH_CLIENT_ID }}
           oauth-secret: ${{ secrets.TAILSCALE_OAUTH_SECRET }}
           tags: tag:ci
-      
+
       - name: Setup Tailscale (Auth Key Fallback)
         id: tailscale_authkey
-        if: ${{ secrets.TAILSCALE_OAUTH_CLIENT_ID == '' && steps.tailscale_oauth.outcome != 'success' }}
+        if: steps.tailscale_oauth.outcome != 'success'
         continue-on-error: true
         uses: tailscale/github-action@v2
         with:
-          oauth-secret: ${{ secrets.TAILSCALE_OAUTH_SECRET }}
+          authkey: ${{ secrets.TAILSCALE_AUTH_KEY }}
           tags: tag:ci
-      
+
       - name: Tailscale Status
         if: steps.tailscale_oauth.outcome == 'failure' && steps.tailscale_authkey.outcome == 'failure'
         run: |
@@ -94,7 +93,7 @@ jobs:
         run: |
           # Build command based on inputs
           DEPLOY_CMD="cd /root/work/DevSystem && sudo bash scripts/qs/setup-qs-master.sh"
-          
+
           # Add deployment mode
           MODE="${{ github.event.inputs.deployment_mode || 'normal' }}"
           if [ "$MODE" = "force" ]; then
@@ -104,14 +103,14 @@ jobs:
           elif [ "$MODE" = "rollback" ]; then
             DEPLOY_CMD="$DEPLOY_CMD --rollback"
           fi
-          
+
           # Add specific component if provided
           if [ -n "${{ github.event.inputs.component }}" ]; then
             DEPLOY_CMD="$DEPLOY_CMD --component=${{ github.event.inputs.component }}"
           fi
-          
+
           echo "Executing: $DEPLOY_CMD"
-          
+
           # Execute deployment
           ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
             ${{ secrets.QS_VPS_USER }}@${{ secrets.QS_VPS_HOST }} \
@@ -124,7 +123,7 @@ jobs:
           REPORT=$(ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
             ${{ secrets.QS_VPS_USER }}@${{ secrets.QS_VPS_HOST }} \
             "ls -t /var/log/qs-deployment/deployment-report-*.md 2>/dev/null | head -n1" || echo "")
-          
+
           if [ -n "$REPORT" ]; then
             echo "### Deployment Report" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
@@ -138,20 +137,20 @@ jobs:
         run: |
           echo "### Service Status" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           # Check service status
           ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
             ${{ secrets.QS_VPS_USER }}@${{ secrets.QS_VPS_HOST }} \
             "systemctl is-active caddy qdrant-qs" > /tmp/services.txt || true
-          
+
           CADDY_STATUS=$(sed -n '1p' /tmp/services.txt)
           QDRANT_STATUS=$(sed -n '2p' /tmp/services.txt)
-          
+
           echo "| Service | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|---------|--------|" >> $GITHUB_STEP_SUMMARY
           echo "| Caddy | $CADDY_STATUS |" >> $GITHUB_STEP_SUMMARY
           echo "| Qdrant | $QDRANT_STATUS |" >> $GITHUB_STEP_SUMMARY
-          
+
           # Check if services are active
           if [ "$CADDY_STATUS" != "active" ] || [ "$QDRANT_STATUS" != "active" ]; then
             echo "::error::One or more services are not active"
@@ -163,16 +162,16 @@ jobs:
         run: |
           echo "### Health Checks" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           # Qdrant health check
           QDRANT_HEALTH=$(ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
             ${{ secrets.QS_VPS_USER }}@${{ secrets.QS_VPS_HOST }} \
             "curl -s http://localhost:6333/healthz" || echo "failed")
-          
+
           echo "| Check | Result |" >> $GITHUB_STEP_SUMMARY
           echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
           echo "| Qdrant API | $QDRANT_HEALTH |" >> $GITHUB_STEP_SUMMARY
-          
+
           if [ "$QDRANT_HEALTH" != "healthz check passed" ]; then
             echo "::warning::Qdrant health check failed"
           fi
