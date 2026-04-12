@@ -51,17 +51,17 @@
 
 ### Phase 3: Workflow-Etablierung (30 Min)
 
-- [ ] **AC3.1:** Issue-Templates erstellt in `.github/ISSUE_TEMPLATE/`:
+- [x] **AC3.1:** Issue-Templates erstellt in `.github/ISSUE_TEMPLATE/`:
   - feature.md (Feature-Template)
   - bug.md (Bug-Template, integriert in Features)
-- [ ] **AC3.2:** Dokumentiert in docs/operations/:
+- [x] **AC3.2:** Dokumentiert in docs/operations/:
   - feature-workflow.md (Wie Features verwaltet werden)
   - issue-guidelines.md (Issue-Creation-Rules, Granularität, AC-Best-Practices)
-- [ ] **AC3. 3:** Erstes Feature vom Handy getestet:
+- [x] **AC3.3:** Erstes Feature vom Handy getestet:
   - Issue auf Board bewegen
   - AC abhaken
   - Via Commit schließen (Closes #X)
-- [ ] **AC3.4:** Git-Workflow aktualisiert (Commit-Messages mit "Closes #X")
+- [x] **AC3.4:** Git-Workflow aktualisiert (Commit-Messages mit "Closes #X")
 
 ---
 
