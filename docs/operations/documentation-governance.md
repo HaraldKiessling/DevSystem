@@ -27,7 +27,7 @@ Dieses Dokument definiert die Governance für die Projekt-Dokumentation, einschl
 1. **Live-System** (höchste Priorität bei Service-Status)
 2. **Git-History** (unveränderbare Wahrheit über Code-Änderungen)
 3. **CHANGELOG.md** (Was wurde WANN geändert)
-4. **docs/project/todo.md** (Was ist AKTUELL zu tun)
+4. **GitHub Issues/Projects** (Was ist AKTUELL zu tun)
 5. **docs/reports/** (Wie ist der AKTUELLE Stand)
 6. **docs/archive/** (Was war HISTORISCH)
 
@@ -73,7 +73,7 @@ Dieses Dokument definiert die Governance für die Projekt-Dokumentation, einschl
 
 | Dokument | Primary Owner | Update-Trigger | Max. Delay |
 |----------|---------------|----------------|------------|
-| [`docs/project/todo.md`](../project/todo.md) | Project-Lead / AI-Agent | Nach Task-Abschluss | 1h |
+| [GitHub Issues](https://github.com/HaraldKiessling/DevSystem/issues) | Project-Lead / AI-Agent | Nach Task-Abschluss | Real-time |
 | [`CHANGELOG.md`](../../CHANGELOG.md) | Developer / AI-Agent | Vor jedem Merge | 0h |
 | [`docs/reports/DevSystem-Implementation-Status.md`](../reports/DevSystem-Implementation-Status.md) | Tech-Lead | Nach Major Milestones | 1 Woche |
 | [`docs/archive/`](../archive/) | Automated (CI/CD) | Nach Deployment-Success | Sofort |
@@ -84,7 +84,7 @@ Dieses Dokument definiert die Governance für die Projekt-Dokumentation, einschl
 ### 2.2 Verantwortlichkeiten
 
 **Project-Lead:**
-- [`docs/project/todo.md`](../project/todo.md) aktuell halten
+- GitHub Issues/Projects aktuell halten
 - Offene Entscheidungen tracken
 - Releases koordinieren
 
@@ -222,9 +222,9 @@ docs/archive/
 ### 4.2 Quick-Check-Checkliste (Täglich)
 
 ```bash
-# 1. todo.md Timestamp prüfen
-grep "Stand:" docs/project/todo.md
-# ⚠️ Sollte nicht älter als 24h sein
+# 1. GitHub Issues prüfen
+gh issue list --state open
+# ⚠️ Sind alle Issues aktuell?
 
 # 2. Uncommitted Documentation
 git status docs/
@@ -358,7 +358,7 @@ graph TD
 - [x] Tests erfolgreich
 
 ## Aktualisierte Dokumente
-- [x] docs/project/todo.md
+- [x] GitHub Issues
 - [x] CHANGELOG.md
 
 ## Nächste Schritte

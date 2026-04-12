@@ -1,8 +1,8 @@
 # Feature Issues - Batch 1
 
 **Version:** 1.0.0  
-**Erstellt:** 2026-04-12  
-**Quelle:** STATUS.md Analyse (Phase 1)  
+**Erstellt:** 2026-04-12
+**Quelle:** Post-MVP Feature-Analyse (Phase 1)
 **Anzahl Issues:** 15
 
 ---
@@ -70,8 +70,8 @@ Aktuell existiert noch 1 verwaister Branch (`qs-optimization`) nach dem großen 
 Sehr schnell erledigbar (10 Min), minimaler aber existierender Wert für Projekt-Sauberkeit.
 
 ### 🔗 References
-- [Git-Branch-Cleanup Report](docs/archive/git-branch-cleanup/GIT-BRANCH-CLEANUP-REPORT.md)
-- [STATUS.md - QS-Integration Abschluss](STATUS.md#-mittel-nächste-2-4-wochen-7h)
+- [Git-Branch-Cleanup Report](../archive/git-branch-cleanup/GIT-BRANCH-CLEANUP-REPORT.md)
+- [QS-Integration Dokumentation](../strategies/qs-implementierungsplan-final.md)
 
 ---
 
@@ -124,8 +124,8 @@ Aktuell sind nur 3/16 geplante E2E-Tests implementiert. Vollständige Test-Cover
 Hoher Wert für vollständige CI/CD-Pipeline, moderater Aufwand (2h für Batch 1 von 2).
 
 ### 🔗 References
-- [STATUS.md - Remote E2E Tests](STATUS.md#-mittel-nächste-2-4-wochen-7h)
-- [E2E Test Script](scripts/qs/run-e2e-tests.sh)
+- [QS Implementation Plan](../strategies/qs-implementierungsplan-final.md)
+- [E2E Test Script](../../scripts/qs/run-e2e-tests.sh)
 
 ---
 
@@ -159,8 +159,8 @@ Phase 5 der QS-Integration ist noch nicht abgeschlossen:
 
 - [ ] AC1: README.md vollständig aktualisiert (Links zu Projects Board)
 - [ ] AC2: CHANGELOG.md mit Phase 4-5 Änderungen
-- [ ] AC3: STATUS.md finalisiert (QS-Integration 100%)
-- [ ] AC4: Migration-Dokumentation (todo.md → GitHub Projects)
+- [ ] AC3: QS-Integration Documentation finalisiert (100%)
+- [ ] AC4: Migration-Dokumentation (GitHub Projects etabliert)
 - [ ] AC5: Alle Archive-Links validiert
 - [ ] AC6: Quick-Start-Guide getestet
 
@@ -178,8 +178,8 @@ Phase 5 der QS-Integration ist noch nicht abgeschlossen:
 Hoher langfristiger Wert für Maintainability, moderater Aufwand (2-3h).
 
 ### 🔗 References
-- [STATUS.md - Dokumentation & Finalisierung](STATUS.md#-mittel-nächste-2-4-wochen-7h)
-- [Documentation Governance](docs/operations/documentation-governance.md)
+- [QS Implementation Plan](../strategies/qs-implementierungsplan-final.md)
+- [Documentation Governance](../operations/documentation-governance.md)
 
 ---
 
@@ -233,7 +233,7 @@ Aktuell keine Monitoring-Lösung implementiert. Probleme werden erst bei manuell
 Hoher Wert für Stabilität und Betrieb, aber signifikanter Aufwand (4-6h).
 
 ### 🔗 References
-- [STATUS.md - Post-MVP Features](STATUS.md#-niedrig-backlog-20h)
+- [Monitoring Konzepte](../concepts/)
 
 ---
 
@@ -286,8 +286,8 @@ Kein dokumentierter DR-Plan existiert:
 Hoher Wert für Risikomanagement, moderater Aufwand (2-3h).
 
 ### 🔗 References
-- [STATUS.md - Post-MVP Features](STATUS.md#-niedrig-backlog-20h)
-- [Backup Script](scripts/qs/backup-qs-system.sh)
+- [Deployment Process](../strategies/deployment-prozess.md)
+- [Backup Script](../../scripts/qs/backup-qs-system.sh)
 
 ---
 
@@ -340,8 +340,8 @@ Bekannte Performance-Issues:
 Guter Wert für User-Experience, moderater Aufwand (2-3h).
 
 ### 🔗 References
-- [STATUS.md - code-server Korrekturen](STATUS.md#-niedrig-backlog-20h)
-- [code-server Konzept](docs/concepts/code-server-konzept.md)
+- [code-server Konzept](../concepts/code-server-konzept.md)
+- [Update Script](../../scripts/update-code-server-safe.sh)
 
 ---
 
@@ -395,8 +395,8 @@ Aktuell keine lokale KI-Integration:
 Hoher Wert für moderne Dev-Workflows, aber signifikanter Aufwand (4-6h).
 
 ### 🔗 References
-- [STATUS.md - KI-Integration](STATUS.md#-niedrig-backlog-20h)
-- [KI-Integration Konzept](docs/concepts/ki-integration-konzept.md)
+- [KI-Integration Konzept](../concepts/ki-integration-konzept.md)
+- [Projekt Vision](../project/VISION.md)
 
 ---
 
@@ -448,7 +448,7 @@ Aktuelle Deployment-Zeit unbekannt:
 Moderater Wert für Effizienz, geringer Aufwand (2h).
 
 ### 🔗 References
-- [STATUS.md - Performance-Profiling](STATUS.md#-niedrig-backlog-20h)
+- [Deployment Process](../strategies/deployment-prozess.md)
 
 ---
 
@@ -877,6 +877,6 @@ Moderater Wert für Log-Analyse, moderater Aufwand (3-5h). Nice-to-have.
 
 ---
 
-**Erstellt für:** [GitHub Issue #1 - Phase 1](https://github.com/HaraldKiessling/DevSystem/issues/1)  
-**Quelle:** [STATUS.md](../../STATUS.md) Analyse  
-**Letztes Update:** 2026-04-12
+**Erstellt für:** [GitHub Issue #1 - Phase 1](https://github.com/HaraldKiessling/DevSystem/issues/1)
+**Quelle:** Post-MVP Feature-Analyse & Task-Archiv
+**Letztes Update:** 2026-04-12 (Nach STATUS.md/todo.md Bereinigung)

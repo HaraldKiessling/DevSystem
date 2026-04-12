@@ -4,9 +4,10 @@ Dieser Ordner enthält Dokumente zur Projekt-Planung, -Vision und -Organisation.
 
 ## Quick-Links
 
-- **[📊 Status-Dashboard](../../STATUS.md)** - Projekt-Status auf einen Blick
-- **[📋 Detaillierte TODO-Liste](todo.md)** - Alle Tasks
+- **[📊 GitHub Projects Board](https://github.com/HaraldKiessling/DevSystem/projects)** - Aktive Tasks & Features
+- **[📝 GitHub Issues](https://github.com/HaraldKiessling/DevSystem/issues)** - Feature Requests & Bug Reports
 - **[🎯 Projekt-Vision](VISION.md)** - Ziele und Roadmap
+- **[📦 Task-Archiv](../archive/tasks/)** - Historische Todo-Listen
 
 ## 📄 Dokumente
 
@@ -25,14 +26,12 @@ Projekt-Regeln und Entwicklungs-Workflow:
 - Entwicklungs- und Test-Workflow
 - Git-Regeln und Branching-Strategie
 
-### [todo.md](todo.md)
-Zentrale Aufgabenliste für das Projekt:
-- MVP-Status und abgeschlossene Komponenten
-- Aktive Aufgaben und Phasen
-- Offene Entscheidungen
-- Backlog und zukünftige Ausbaustufen
+### Task-Management
 
-**Hinweis:** todo.md wird zukünftig zu GitHub Issues/Projects migriert.
+Das Projekt nutzt seit 2026-04-12 **Feature-Based Task-Management**:
+- Aktive Tasks über [GitHub Projects Board](https://github.com/HaraldKiessling/DevSystem/projects)
+- Feature Requests und Bugs über [GitHub Issues](https://github.com/HaraldKiessling/DevSystem/issues)
+- Historische Tasks im [Archiv](../archive/tasks/completed-2026-Q1.md)
 
 ---
 

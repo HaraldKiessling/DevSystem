@@ -59,8 +59,8 @@ Nach jedem `git merge` wird automatisch eine Checkliste angezeigt:
 
 Nach einem Merge sollten folgende Dokumente aktualisiert werden:
 
-  1. 📋 docs/project/todo.md
-     - [ ] Tasks als [x] markieren
+  1. 📋 GitHub Issues
+     - [ ] Related Issues aktualisieren
      - [ ] Zeitstempel aktualisieren
      - [ ] Branch-Referenzen entfernen
 

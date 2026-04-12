@@ -22,8 +22,8 @@ Ein Feature, Bugfix oder Task gilt als "Done" wenn **ALLE** folgenden Schritte e
 
 **Wichtig:** Dokumentation ist **NICHT optional** - sie ist Teil der Implementation!
 
-#### docs/project/todo.md
-- [ ] Task-Status auf `[x]` gesetzt für abgeschlossene Aufgaben
+#### Task-Management via GitHub
+- [ ] Related GitHub Issues verlinkt und aktualisiert
 - [ ] Neue Tasks hinzugefügt, falls während der Arbeit entdeckt
 - [ ] "Offene Entscheidungen" aktualisiert (gelöste als ✅ GELÖST markiert)
 - [ ] **Zeitstempel aktualisiert:** `**Stand:** YYYY-MM-DD HH:MM UTC`
@@ -63,9 +63,9 @@ git branch --show-current
 grep -r "$(git branch --show-current)" docs/
 # ⚠️ Wenn gefunden: Entfernen aus Dokumentation!
 
-# 2. Prüfe todo.md Timestamp
-grep "Stand:" docs/project/todo.md
-# ⚠️ Sollte nicht älter als 1h sein!
+# 2. Prüfe GitHub Issues
+gh issue list --state open
+# ⚠️ Sind alle relevanten Issues aktualisiert?
 
 # 3. Prüfe CHANGELOG
 git diff main...HEAD -- CHANGELOG.md
@@ -131,7 +131,7 @@ Abgeschlossen:
 - [x] Task ID 124: Tests für XYZ
 
 Dokumentation:
-- Updated: docs/project/todo.md (Zeitstempel: 2026-04-11 19:45 UTC)
+- Updated: GitHub Issue #42 status changed
 - Updated: CHANGELOG.md (v1.3.0 - Added)
 - Created: docs/archive/phases/FEATURE-XYZ-SUCCESS.md
 

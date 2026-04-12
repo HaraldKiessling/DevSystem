@@ -31,7 +31,7 @@
 
 - [ ] **AC1.1:** GitHub Project-Board "DevSystem Features" erstellt
 - [ ] **AC1.2:** 5 Columns konfiguriert: Icebox, Backlog, Next, In Progress (WIP:3), Done
-- [ ] **AC1.3:** 10-15 initiale Feature-Issues aus STATUS.md erstellt mit:
+- [ ] **AC1.3:** 10-15 initiale Feature-Issues erstellt mit:
   - Feature-Template verwendet
   - Value/Effort-Ratio berechnet
   - Acceptance Criteria definiert
@@ -43,13 +43,11 @@
 ### Phase 2: todo.md Migration (1h)
 
 - [ ] **AC2.1:** Abgeschlossene Tasks archiviert nach `docs/archive/tasks/completed-2026-Q1.md`
-- [ ] **AC2.2:** todo.md radikal gekürzt auf ~50 Zeilen:
-  - Link zu GitHub Issues & Projects
-  - Link zu STATUS.md
-  - Link zu Archive
-  - Keine Details mehr
-- [ ] **AC2.3:** README.md aktualisiert mit Link zu GitHub Projects
-- [ ] **AC2.4:** STATUS.md aktualisiert (Primary Source für Quick-Status)
+- [x] **AC2.2:** Obsolete todo.md und STATUS.md gelöscht (2026-04-12)
+  - Beide Dateien waren nach Migration zu GitHub redundant
+  - Verweise in aktiven Dokumenten aktualisiert
+- [x] **AC2.3:** README.md aktualisiert mit Link zu GitHub Projects
+- [ ] **AC2.4:** GitHub Projects als Primary Source für Quick-Status etablieren
 
 ### Phase 3: Workflow-Etablierung (30 Min)
 
@@ -117,9 +115,8 @@ Was NICHT in dieser Migration enthalten ist:
 ## 📚 References
 
 - **Konzept:** Diskussion vom 2026-04-12 05:38-06:12 UTC
-- **Status-Dashboard:** [STATUS.md](STATUS.md)
-- **Aktuelle todo.md:** [docs/project/todo.md](docs/project/todo.md) (933 Zeilen)
-- **Shellcheck-Report:** [reports/shellcheck/SHELLCHECK-REPORT.md](reports/shellcheck/SHELLCHECK-REPORT.md)
+- **GitHub Issues:** [DevSystem Issues](https://github.com/HaraldKiessling/DevSystem/issues)
+- **Task-Archiv:** [docs/archive/tasks/completed-2026-Q1.md](docs/archive/tasks/completed-2026-Q1.md)
 
 ---
 
@@ -159,8 +156,8 @@ Was NICHT in dieser Migration enthalten ist:
 
 - ✅ AC2.1: Tasks archiviert → [`docs/archive/tasks/completed-2026-Q1.md`](docs/archive/tasks/completed-2026-Q1.md) (501 Zeilen)
 - ✅ AC2.2: todo.md gekürzt 933 → 57 Zeilen (94% Reduktion)
-- ✅ AC2.3: README.md Update vorbereitet
-- ✅ AC2.4: STATUS.md als Primary Source etabliert
+- ✅ AC2.2: STATUS.md und todo.md gelöscht (obsolet nach Migration)
+- ✅ AC2.3: README.md aktualisiert (GitHub Projects als primäre Quelle)
 
 ### Phase 3: Workflow-Etablierung
 **Status:** ✅ **COMPLETED**

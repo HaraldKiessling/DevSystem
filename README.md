@@ -4,8 +4,6 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Ubuntu%20VPS-orange)](https://www.ionos.de)
 
-> **📊 [Projekt-Status-Dashboard](STATUS.md)** - Schnelle Übersicht: Was ist fertig? Was ist zu tun?
-
 > **Cloud-basierte Entwicklungsumgebung mit KI-Unterstützung und Zero-Trust-Zugriff**
 
 DevSystem ist eine vollständig remote nutzbare, KI-gestützte Entwicklungsumgebung, die als Web-Anwendung im Browser läuft. Das System ermöglicht mobilen, geräteunabhängigen Zugriff auf eine komplette VS Code-Umgebung mit autonomen Multi-Agent-KI-Assistenten.
@@ -118,15 +116,13 @@ Vollständige Übersicht: [docs/README.md](docs/README.md)
 
 ## 📋 Task-Management
 
-**Neues System seit 2026-04-12:** Feature-Based Task-Management via GitHub
+**System seit 2026-04-12:** Feature-Based Task-Management via GitHub
 
-- **📊 [GitHub Projects Board](https://github.com/HaraldKiessling/DevSystem/projects)** - Aktive Tasks & Features *(Link folgt nach Board-Erstellung)*
+- **📊 [GitHub Projects Board](https://github.com/HaraldKiessling/DevSystem/projects)** - Aktive Tasks & Features
 - **📝 [GitHub Issues](https://github.com/HaraldKiessling/DevSystem/issues)** - Feature Requests & Bug Reports
-- **🎯 [STATUS.md](STATUS.md)** - Quick-Status: Was läuft? Was ist zu tun?
-- **📄 [todo.md](docs/project/todo.md)** - Minimale Übersicht (Migration abgeschlossen)
 - **📦 [Task-Archiv](docs/archive/tasks/)** - Historische Todo-Listen (bis Q1 2026)
 
-**Migration:** ✅ Phase 2 abgeschlossen (GitHub Issue #1) - Alle abgeschlossenen Tasks archiviert, todo.md radikal gekürzt.
+**MVP Status:** ✅ Alle Kernkomponenten produktiv (Tailscale, Caddy, code-server, Qdrant)
 
 ---
 
