@@ -59,6 +59,94 @@ Wird automatisch getriggert bei:
 
 ---
 
+## 📚 Documentation Validation Workflow
+
+**Datei:** `docs-validation.yml`
+
+### Zweck
+Automatische Validierung der Dokumentations-Synchronisation.
+
+### Trigger
+
+#### 1. Pull Requests nach main
+Bei Änderungen in:
+- `docs/**`
+- `scripts/**`
+- `CHANGELOG.md`
+- `.github/workflows/**`
+
+#### 2. Push nach main
+Bei Änderungen in:
+- `docs/**`
+- `scripts/**`
+- `CHANGELOG.md`
+
+#### 3. Schedule
+Täglich um 08:00 UTC
+
+#### 4. Manueller Trigger (workflow_dispatch)
+Kann jederzeit manuell gestartet werden
+
+### Checks
+
+#### 1. **todo.md Timestamp Check** 📋
+Validiert die Aktualität von [`docs/project/todo.md`](../../docs/project/todo.md):
+- ✅ **OK:** < 24 Stunden alt
+- ⚠️ **WARNING:** > 24 Stunden, aber < 7 Tage
+- ❌ **ERROR:** > 7 Tage (Workflow schlägt fehl)
+
+#### 2. **Branch Reference Check** 🔀
+Sucht nach Feature-Branch-Namen in der Dokumentation:
+- Warnt wenn Branch-Namen in `docs/` gefunden werden
+- Verhindert veraltete Branch-Referenzen
+
+#### 3. **CHANGELOG Update Check** 📝
+Prüft bei Pull Requests, ob bei Code-Änderungen auch das [`CHANGELOG.md`](../../CHANGELOG.md) aktualisiert wurde:
+- Code-Änderungen in `scripts/` oder `.github/`
+- Warnung wenn CHANGELOG nicht aktualisiert
+
+#### 4. **Broken Links Check** 🔗
+Findet defekte relative Links in Markdown-Dateien:
+- Prüft alle `*.md` Dateien in `docs/`
+- Ignoriert externe Links (http/https)
+- Erkennt fehlende Zieldateien
+
+#### 5. **Health Report** 📊
+Generiert Statistiken über Dokumentations-Status:
+- Gesamt Dokumente
+- Aktive vs. archivierte Dokumente
+- todo.md Status
+
+### Status-Levels
+
+- ✅ **OK:** Alle Checks bestanden
+- ⚠️ **WARNING:** Nicht-kritische Probleme (Workflow bleibt grün)
+- ❌ **ERROR:** Kritische Probleme (Workflow schlägt fehl)
+
+### Outputs
+
+Alle Ergebnisse werden im **GitHub Actions Step Summary** angezeigt mit:
+- Detaillierten Check-Ergebnissen
+- Dokumentations-Statistiken
+- Links zu relevanten Dokumenten
+
+### Lokale Ausführung
+
+Für lokale Pre-Merge-Checks verwende das Script:
+```bash
+bash scripts/docs/pre-merge-check.sh
+```
+
+Siehe auch: [`scripts/docs/pre-merge-check.sh`](../../scripts/docs/pre-merge-check.sh)
+
+### Verwandte Dokumentation
+
+- [Git Workflow & Definition of Done](../../docs/operations/git-workflow.md)
+- [Documentation Sync Root-Cause-Analyse](../../docs/archive/retrospectives/DOCUMENTATION-SYNC-ROOT-CAUSE-ANALYSIS-20260411.md)
+- [Pre-Merge-Check Script](../../scripts/docs/pre-merge-check.sh)
+
+---
+
 ## 🔐 Benötigte GitHub Secrets
 
 Konfiguriere folgende Secrets in: `Settings → Secrets and variables → Actions → New repository secret`

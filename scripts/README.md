@@ -73,3 +73,61 @@ Nach erfolgreicher VPS-Vorbereitung folgen diese Schritte:
 1. Installation und Konfiguration von Tailscale
 2. Installation und Konfiguration von Caddy
 3. Installation und Konfiguration von code-server
+
+## Dokumentations-Tools
+
+### pre-merge-check.sh
+
+Validiert Dokumentations-Anforderungen vor Git-Merge.
+
+**Verwendung:**
+
+```bash
+bash scripts/docs/pre-merge-check.sh
+```
+
+**Checks:**
+- Branch-Referenzen in Dokumentation
+- todo.md Timestamp-Aktualität
+- CHANGELOG.md Updates
+- TODOs/FIXMEs im Code
+- Dokumentations-Updates bei Code-Änderungen
+- Git Working Directory Status
+- Merge-Konflikte mit main
+
+**Exit Codes:**
+- 0: Alle Checks bestanden
+- 1: Checks fehlgeschlagen
+
+## Git-Hooks für Dokumentations-Sync
+
+### Setup
+Installiere alle Dokumentations-Git-Hooks:
+
+```bash
+bash scripts/docs/setup-git-hooks.sh
+```
+
+### Post-Merge Hook
+Zeigt nach jedem `git merge` einen Reminder zur Dokumentations-Aktualisierung.
+
+**Features:**
+- Checkliste für todo.md, CHANGELOG.md, Status-Reports
+- Link zur Definition of Done
+- Hinweis auf Pre-Merge-Check-Script
+
+**Deaktivierung:**
+```bash
+rm .git/hooks/post-merge
+```
+
+**Re-Installation:**
+```bash
+bash scripts/docs/setup-git-hooks.sh
+```
+
+### Hook-Templates
+Die Hook-Templates liegen in `scripts/docs/` und können angepasst werden:
+- `post-merge-hook-template.sh` - Post-Merge Dokumentations-Reminder
+
+Nach Änderungen am Template, Setup-Script erneut ausführen.
