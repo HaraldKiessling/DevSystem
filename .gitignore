@@ -105,5 +105,8 @@ htmlcov/
 # Backups directory
 backups/
 
+# Reports (shellcheck, testing, analysis)
+reports/
+
 # Tailscale Auth Keys (sensibel)
 tailscale-authkey.txt
