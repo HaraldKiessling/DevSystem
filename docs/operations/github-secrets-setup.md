@@ -1,8 +1,26 @@
 # GitHub Secrets Setup für QS-VPS Deployment
 
+> **🚀 Neu:** [Vereinfachter Tailscale Setup in 5 Minuten](QUICK-START-TAILSCALE-GITHUB.md) - Automatisiertes Setup-Skript verfügbar!
+
 Dieses Dokument beschreibt die Konfiguration der GitHub Secrets, die für den automatischen Deploy-Workflow auf den QS-VPS benötigt werden.
 
-## Übersicht
+## ⚡ Quick Start
+
+Für einen schnellen, automatisierten Setup-Prozess (empfohlen):
+
+```bash
+# Automatisiertes Setup (5 Minuten)
+./scripts/setup-tailscale-github-auth.sh
+```
+
+Siehe:
+- [Quick Start Guide](QUICK-START-TAILSCALE-GITHUB.md) - Schnelleinstieg
+- [Vereinfachter Setup](TAILSCALE-GITHUB-SETUP-SIMPLIFIED.md) - Detaillierte Anleitung
+- [Methoden-Vergleich](TAILSCALE-AUTH-METHODS-COMPARISON.md) - Auth Key vs OAuth
+
+---
+
+## Übersicht (Manueller Setup)
 
 Der Deploy-Workflow [`.github/workflows/deploy-qs-vps.yml`](../../.github/workflows/deploy-qs-vps.yml) ermöglicht das Deployment vom Smartphone oder jedem anderen Gerät aus. Er benötigt Zugriff auf das Tailscale-Netzwerk und den QS-VPS via SSH.
 
