@@ -118,9 +118,15 @@ Vollständige Übersicht: [docs/README.md](docs/README.md)
 
 ## 📋 Task-Management
 
-**Migration in Progress:** Issue [#1](https://github.com/HaraldKiessling/DevSystem/issues/1) - Feature-Based Task-Management
-**Aktuell:** [todo.md](docs/project/todo.md) (wird migriert zu GitHub Projects)
-**Quick-Status:** [STATUS.md](STATUS.md)
+**Neues System seit 2026-04-12:** Feature-Based Task-Management via GitHub
+
+- **📊 [GitHub Projects Board](https://github.com/HaraldKiessling/DevSystem/projects)** - Aktive Tasks & Features *(Link folgt nach Board-Erstellung)*
+- **📝 [GitHub Issues](https://github.com/HaraldKiessling/DevSystem/issues)** - Feature Requests & Bug Reports
+- **🎯 [STATUS.md](STATUS.md)** - Quick-Status: Was läuft? Was ist zu tun?
+- **📄 [todo.md](docs/project/todo.md)** - Minimale Übersicht (Migration abgeschlossen)
+- **📦 [Task-Archiv](docs/archive/tasks/)** - Historische Todo-Listen (bis Q1 2026)
+
+**Migration:** ✅ Phase 2 abgeschlossen (GitHub Issue #1) - Alle abgeschlossenen Tasks archiviert, todo.md radikal gekürzt.
 
 ---
 

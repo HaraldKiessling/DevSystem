@@ -222,6 +222,258 @@ feat: Tailscale-Installation und Konfiguration hinzugefügt
 Implementiert die Aufgabe "Tailscale VPN installieren und konfigurieren" aus todo.md
 ```
 
+### 3.4 Closing Issues via Commit Messages
+
+GitHub unterstützt das automatische Schließen von Issues durch spezielle Keywords in Commit-Messages. Dies ermöglicht eine nahtlose Integration zwischen Code-Änderungen und Issue-Tracking.
+
+#### Keywords zum automatischen Schließen
+
+Die folgenden Keywords schließen verlinkte Issues automatisch, wenn der Commit in den Default-Branch (main) gemerged wird:
+
+**Primary Keywords:**
+- `Closes #123` - Bevorzugt für allgemeine Issue-Closes
+- `Fixes #123` - Bevorzugt für Bug-Fixes
+- `Resolves #123` - Alternative für allgemeine Resolutionen
+
+**Unterstützte Varianten:**
+- `Close`, `Closes`, `Closed`
+- `Fix`, `Fixes`, `Fixed`
+- `Resolve`, `Resolves`, `Resolved`
+
+**Wichtig:** Keywords müssen **großgeschrieben** sein (z.B. `Closes`, nicht `closes`), um zuverlässig zu funktionieren.
+
+#### Syntax und Beispiele
+
+**Einfaches Issue-Close:**
+```bash
+git commit -m "feat(ui): add dark mode toggle (Closes #42)"
+```
+
+**Bug-Fix mit Issue-Referenz:**
+```bash
+git commit -m "fix(auth): extend token lifetime to 30min (Fixes #89)
+
+Token was expiring too early (5min), causing frequent logouts.
+Increased to 30min and added auto-refresh 5min before expiry.
+
+Tested: Local dev, staging, manual QA"
+```
+
+**Mehrere Issues gleichzeitig schließen:**
+```bash
+git commit -m "feat(backup): automated daily backups (Closes #23, Closes #24)
+
+Implements automated S3 backups with monitoring:
+- #23: Backup script with S3 upload
+- #24: Monitoring dashboard integration
+
+Scheduled via cron: 02:00 UTC daily"
+```
+
+**Alternative Syntax für mehrere Issues:**
+```bash
+# Mit 'and'
+git commit -m "fix: resolve login issues (Fixes #45 and #46)"
+
+# Komma-separiert
+git commit -m "feat: user profile improvements (Closes #78, Resolves #79)"
+```
+
+**Verwandte Issues ohne Auto-Close:**
+```bash
+git commit -m "refactor(api): simplify user service logic
+
+Improves code quality and prepares for upcoming features.
+Related to #123, See also #124"
+```
+*Hinweis: `Related to`, `Ref`, `See` schließen Issues NICHT automatisch.*
+
+#### Cross-Repository-Referenzen
+
+Issues in anderen Repositories können ebenfalls referenziert werden:
+
+```bash
+git commit -m "feat: API integration (Closes owner/other-repo#42)"
+```
+
+#### Commit-Message Format mit Issue-Close
+
+**Empfohlenes Format (Conventional Commits + Issue-Close):**
+
+```
+<type>(<scope>): <subject> (Closes #X)
+
+[optional body]
+
+[optional footer with additional issue references]
+```
+
+**Vollständiges Beispiel:**
+```bash
+git commit -m "feat(monitoring): add email notifications for backup failures (Closes #67)
+
+Implements email alerts for failed backups:
+- SendGrid integration for email delivery
+- HTML template for success/failure notifications
+- Configurable recipients via BACKUP_EMAIL_RECIPIENTS env var
+- Noise reduction: No alerts for <1% variance from avg backup time
+
+All acceptance criteria from #67 fulfilled.
+
+Related to #23 (backup system infrastructure)
+Ref: docs/operations/feature-workflow.md"
+```
+
+#### Best Practices
+
+✅ **DO's:**
+- **Keyword am Ende des Subjects:** Erhöht Lesbarkeit
+  ```
+  feat(ui): add dark mode (Closes #42)
+  ```
+- **Großschreibung verwenden:** `Closes` nicht `closes`
+- **Issue-Nummer mit #:** Immer `#123`, nicht `123`
+- **Ein Issue pro Feature:** Fördert atomare Commits
+- **AC-Erfüllung erwähnen:** "All AC from #X fulfilled"
+- **Tests dokumentieren:** Welche Tests durchgeführt wurden
+- **Body für Details:** Subject kurz, Details im Body
+
+✅ **Empfohlen:**
+```bash
+git commit -m "fix(api): resolve timeout on large requests (Fixes #156)
+
+Increased timeout from 30s to 60s for /api/export endpoint.
+Added connection pooling to prevent resource exhaustion.
+
+Tested:
+- Export with 10k records: Success (42s)
+- Export with 50k records: Success (58s)
+- Concurrent exports: No resource issues
+
+All AC from #156 fulfilled."
+```
+
+❌ **DON'Ts:**
+- **Lowercase keywords verwenden:**
+  ```
+  fixes #123  ❌ (könnte nicht funktionieren)
+  Fixes #123  ✅
+  ```
+- **Keywords im Body statt Subject:**
+  ```
+  feat: new feature
+  
+  This closes #123  ❌ (funktioniert nicht zuverlässig)
+  ```
+- **Vage Referenzen:**
+  ```
+  fixes the login bug  ❌ (keine Issue-Nummer)
+  Fixes #45  ✅
+  ```
+- **Mehrere Features in einem Commit:**
+  ```
+  feat: dark mode + notifications + settings (Closes #1, #2, #3)  ❌
+  ```
+  *Besser: 3 separate Commits mit je einem Issue*
+
+#### Integration mit GitHub Projects
+
+**Automatischer Workflow:**
+
+1. **Issue erstellen** → Landet in "Icebox" oder "Backlog"
+2. **Issue in "In Progress" verschieben** → Arbeit beginnt
+3. **Branch erstellen:** `feature/#42-dark-mode`
+4. **Commits mit Referenz:**
+   ```bash
+   git commit -m "feat: implement theme switcher (partial #42)"
+   git commit -m "feat: add theme persistence (partial #42)"
+   git commit -m "feat: complete dark mode UI (Closes #42)"
+   ```
+5. **PR erstellen** mit "Closes #42" in Beschreibung
+6. **PR mergen** → Issue wird automatisch geschlossen
+7. **Issue in "Done" verschoben** (automatisch via Projects)
+
+**Partial Progress Tracking:**
+
+Für große Features, die mehrere Commits benötigen:
+
+```bash
+# Erster Commit (kein Close)
+git commit -m "feat(ui): implement theme toggle component (#42)
+
+Partial progress on #42. Still needed:
+- Color scheme CSS variables
+- Persistence logic
+- Auto-mode support"
+
+# Zweiter Commit (kein Close)
+git commit -m "feat(ui): add theme persistence (#42)
+
+Continued work on #42. Remaining:
+- Auto-mode support
+- Final testing"
+
+# Finaler Commit (Close)
+git commit -m "feat(ui): complete dark mode implementation (Closes #42)
+
+All AC from #42 fulfilled:
+- [x] Theme toggle in settings
+- [x] Persistent user preference
+- [x] All components support dark mode
+- [x] Auto-mode with system preference
+- [x] WCAG 2.1 AA compliance
+- [x] Smooth transitions"
+```
+
+#### Troubleshooting
+
+**Problem: Issue schließt nicht automatisch**
+
+**Mögliche Ursachen:**
+1. ❌ Keyword lowercase: `closes #123` → Verwende `Closes #123`
+2. ❌ Issue in anderem Repo: `#123` → Verwende `owner/repo#123`
+3. ❌ Commit nicht in main: Feature-Branch → Erst nach Merge in main
+4. ❌ Keyword im Body: Verwende Subject-Line
+5. ❌ PR nicht gemerged: Nur Keyword in PR → Keyword in Commit-Message
+
+**Lösung:**
+```bash
+# Korrekter Workflow
+git commit -m "feat: new feature (Closes #123)"
+git push origin feature/xyz
+# PR erstellen
+# PR Review & Approve
+# PR mergen in main → Issue schließt automatisch
+```
+
+**Manuelles Schließen als Fallback:**
+
+Falls automatisches Schließen fehlschlägt:
+```bash
+gh issue close 123 --comment "Implemented in commit abc1234 and PR #124"
+```
+
+#### Checkliste: Issue-Close via Commit
+
+Vor dem Commit:
+- [ ] Issue-Nummer korrekt? (z.B. #42)
+- [ ] Alle Acceptance Criteria erfüllt?
+- [ ] Tests durchgeführt und bestanden?
+- [ ] Dokumentation aktualisiert?
+
+Im Commit:
+- [ ] Keyword großgeschrieben? (`Closes` nicht `closes`)
+- [ ] Keyword im Subject? (nicht nur im Body)
+- [ ] Format: `<type>: <description> (Closes #X)`
+- [ ] Optional: AC-Erfüllung im Body erwähnt?
+
+Nach dem Merge:
+- [ ] Issue automatisch geschlossen?
+- [ ] Issue in "Done"-Spalte verschoben? (Projects)
+- [ ] Branch gelöscht?
+
+---
+
 ## 4. Merge-Prozess
 
 ### 4.1 Voraussetzungen für Merges in den main-Branch
