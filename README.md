@@ -4,6 +4,8 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Ubuntu%20VPS-orange)](https://www.ionos.de)
 
+> **📊 [Projekt-Status-Dashboard](STATUS.md)** - Schnelle Übersicht: Was ist fertig? Was ist zu tun?
+
 > **Cloud-basierte Entwicklungsumgebung mit KI-Unterstützung und Zero-Trust-Zugriff**
 
 DevSystem ist eine vollständig remote nutzbare, KI-gestützte Entwicklungsumgebung, die als Web-Anwendung im Browser läuft. Das System ermöglicht mobilen, geräteunabhängigen Zugriff auf eine komplette VS Code-Umgebung mit autonomen Multi-Agent-KI-Assistenten.

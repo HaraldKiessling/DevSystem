@@ -1,5 +1,30 @@
 # .Roo Configuration Changelog
 
+## [1.2.0] - 2026-04-12
+
+### Added
+- README.md mit vollständiger Struktur-Dokumentation
+  - Beschreibung aller Verzeichnisse und Dateien
+  - Verwendung für KI-Assistenten und Entwickler
+  - Beziehungen zu anderen Dokumentationen
+  - Wartungs- und Versionierungs-Guidelines
+
+### Status
+- **Konsolidierung .roo/.Roo**: ✅ Abgeschlossen
+  - Nur `.Roo/` Verzeichnis existiert
+  - Keine Redundanz mit `.roo/` vorhanden
+  - Struktur ist klar organisiert und dokumentiert
+
+### Reason
+Beseitigung potenzieller Verwirrung durch parallele Verzeichnisse und Etablierung klarer Dokumentation der `.Roo/`-Struktur.
+
+### Impact
+- Klare Navigation in der `.Roo/`-Struktur durch README.md
+- Dokumentierte Hierarchie der Regelwerke
+- Verbesserte Auffindbarkeit von Regeln und Checklisten
+
+---
+
 ## [1.1.0] - 2026-04-11
 
 ### Added

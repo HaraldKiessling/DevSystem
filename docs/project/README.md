@@ -2,6 +2,12 @@
 
 Dieser Ordner enthält Dokumente zur Projekt-Planung, -Vision und -Organisation.
 
+## Quick-Links
+
+- **[📊 Status-Dashboard](../../STATUS.md)** - Projekt-Status auf einen Blick
+- **[📋 Detaillierte TODO-Liste](todo.md)** - Alle Tasks
+- **[🎯 Projekt-Vision](VISION.md)** - Ziele und Roadmap
+
 ## 📄 Dokumente
 
 ### [VISION.md](VISION.md)
