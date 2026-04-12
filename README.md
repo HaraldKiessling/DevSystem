@@ -116,6 +116,14 @@ Vollständige Übersicht: [docs/README.md](docs/README.md)
 
 ---
 
+## 📋 Task-Management
+
+**Migration in Progress:** Issue [#1](https://github.com/HaraldKiessling/DevSystem/issues/1) - Feature-Based Task-Management
+**Aktuell:** [todo.md](docs/project/todo.md) (wird migriert zu GitHub Projects)
+**Quick-Status:** [STATUS.md](STATUS.md)
+
+---
+
 ## 🔧 Technology Stack
 
 - **Backend**: Bash Scripts, Node.js (code-server)
