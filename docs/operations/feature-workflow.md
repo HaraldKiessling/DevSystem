@@ -422,6 +422,10 @@ Closes #123
 - [ ] Alle AC erfüllt?
 - [ ] Tests bestehen?
 - [ ] Dokumentation aktualisiert?
+  - [ ] **Feature:** Was + Wozu dokumentiert (z.B. "Dark Mode - Reduziert Augenbelastung")
+  - [ ] **Erweiterung:** Was dokumentiert (z.B. "Caching" oder "Performance-Optimierung")
+  - [ ] Relevante Doku identifiziert (`docs/concepts/`, `docs/operations/`, `README.md`)
+  - [ ] Kurzbeschreibung mit Issue-Referenz hinzugefügt
 - [ ] PR reviewed & approved?
 - [ ] PR mergen mit "Closes #X" in Commit
 - [ ] Issue automatisch geschlossen?

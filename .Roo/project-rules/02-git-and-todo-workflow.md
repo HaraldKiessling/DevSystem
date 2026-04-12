@@ -64,3 +64,45 @@ Nach jeder Änderung an Dokumentations-Dateien (*.md) müssen die Änderungen SO
 - `plans/*.md`
 - Status-Reports (PHASE*.md, DEPLOYMENT*.md, etc.)
 - Anleitungen (*.md im Root)
+
+## Dokumentations-Konsistenz-Pflicht
+Jedes Feature und jede Erweiterung MUSS in der relevanten Dokumentation beschrieben werden, bevor das Issue als abgeschlossen gilt.
+
+### Features (neue Funktionalität)
+Features müssen dokumentiert werden mit:
+- **Was** es macht
+- **Wozu** es dient
+
+**Beispiel:**
+```markdown
+Dark Mode (#123) - Reduziert Augenbelastung bei Nachtnutzung
+```
+
+### Eigenschaften/Erweiterungen
+Erweiterungen müssen dokumentiert werden mit:
+- **Was** geändert wurde (kann ein Wort sein)
+
+**Beispiele:**
+```markdown
+Caching (#124)
+Performance-Optimierung (#125)
+```
+
+### Betroffene Dokumentation
+- **Konzepte**: `docs/concepts/*.md` - Für neue Konzepte oder Architektur-Änderungen
+- **Operations**: `docs/operations/*.md` - Für Workflow- oder Prozess-Änderungen
+- **Deployment**: `docs/deployment/*.md` - Für Deployment-relevante Features
+- **README.md**: Für User-facing Features oder wichtige Änderungen
+
+### Prozess
+1. Feature/Erweiterung implementieren
+2. Relevante Dokumentation identifizieren
+3. Kurz-Beschreibung hinzufügen (Was/Wozu oder nur Was)
+4. Dokumentations-Update im selben PR/Commit
+5. In Acceptance Criteria abhaken
+
+### Warum?
+- Verhindert Dokumentations-Drift
+- Hält Code und Doku konsistent
+- Erleichtert Onboarding neuer Entwickler
+- Macht Projekt-Historie nachvollziehbar
