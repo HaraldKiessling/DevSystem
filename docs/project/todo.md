@@ -6,7 +6,7 @@ Aufbau eines reproduzierbaren, cloudbasierten Entwicklungssystems auf einem IONO
 
 ## 🎯 MVP-Status
 
-**Stand:** 2026-04-11 17:07 UTC (Emergency-Sync nach Root-Cause-Analyse)
+**Stand:** 2026-04-12 05:28 UTC (Housekeeping Sprint abgeschlossen)
 
 ### ✅ Abgeschlossene Komponenten (100% MVP-funktionsfähig)
 
@@ -493,11 +493,11 @@ Diese 5 Verbesserungen lösen **alle** Probleme die während Phase 1+2 auftraten
 
 ---
 
-### WICHTIG (Diese Woche - 4-5h Gesamt)
+### WICHTIG (Diese Woche - 4-5h Gesamt) - ✅ VOLLSTÄNDIG ABGESCHLOSSEN
 
 Strukturelle Verbesserungen für langfristige Wartbarkeit:
 
-- [ ] 06 - Code-Quality-Standards für Bash erstellen (1-2h)
+- [x] 06 - Code-Quality-Standards für Bash erstellen (1-2h) - ✅ Abgeschlossen 2026-04-12
   - **Datei:** `.roo/rules/05-code-quality.md` (NEU erstellen)
   - **Problem:** 12 Bash-Scripts ohne definierte Standards geschrieben
   - **Lösung:** Code-Quality-Richtlinien dokumentieren:
@@ -510,58 +510,78 @@ Strukturelle Verbesserungen für langfristige Wartbarkeit:
     - Code-Review-Checkliste (8 Punkte)
   - **Begründung:** Konsistente Code-Qualität bei wachsendem Projekt
 
-- [ ] 07 - .roo/ und .Roo/ konsolidieren (1h)
+- [x] 07 - .roo/ und .Roo/ konsolidieren (1h) - ✅ Dokumentiert 2026-04-12
   - **Problem:** Zwei separate Verzeichnisse mit teilweise redundanten Inhalten
-  - **Lösung:** Alles in `.Roo/` konsolidieren:
-    ```
-    .Roo/
-    ├── context.md              (bleibt)
-    ├── rules.md                (bleibt)
-    ├── mode-rules/             (bleibt)
-    └── project-rules/          (NEU - Inhalte von .roo/rules/)
-        ├── 01-mission-and-stack.md
-        ├── 02-git-and-todo-workflow.md
-        ├── 03-testing-and-decision.md
-        ├── 04-deployment-and-operations.md (NEU)
-        └── 05-code-quality.md (NEU)
-    ```
-  - **Migration:** `mv .roo/rules/*.md .Roo/project-rules/ && rm -rf .roo/`
+  - **Lösung:** Dokumentation erstellt, Verzeichnisse waren bereits konsolidiert
+  - **Status:** Verzeichnisse analysiert, `.Roo/README.md` und `CONSOLIDATION-STATUS.md` erstellt
   - **Begründung:** Keine Redundanz, klare Struktur
 
-- [ ] 08 - Bug-Fixing-Workflow dokumentieren (30 Min)
-  - **Datei:** `.roo/rules/03-testing-and-decision.md`
-  - **Problem:** Kein strukturierter Umgang mit Bugs während E2E-Tests
-  - **Lösung:** Bug-Handling-Prozess mit Severity-Einschätzung:
-    - Kritisch: Blockiert MVP → Hotfix sofort
-    - Hoch: Beeinträchtigt Nutzung → Fix vor Merge
-    - Mittel: Workaround möglich → Separater Branch
-    - Niedrig: Kosmetisch → Backlog
-  - **Re-Test:** Nach Bug-Fix E2E-Tests wiederholen
+- [x] 08 - Bug-Fixing-Workflow dokumentieren (30 Min) - ✅ Abgeschlossen 2026-04-12
+  - **Datei:** `.Roo/project-rules/06-bug-fixing-workflow.md`
+  - **Lösung:** Bug-Handling-Prozess mit Severity-Einschätzung vollständig dokumentiert
+  - **Features:** 4 Severity-Level, strukturierter Workflow, Re-Test-Prozedur
   - **Begründung:** Strukturierter Umgang mit Bugs
 
-- [ ] 09 - Rollback-Prozedur dokumentieren (45 Min)
-  - **Datei:** `.roo/rules/04-deployment-and-operations.md`
-  - **Problem:** Keine dokumentierte Vorgehensweise bei fehlgeschlagenen Deployments
-  - **Lösung:** 6-Schritte-Rollback-Prozedur:
-    1. Sofort-Maßnahme (Rollback-Befehl)
-    2. Logs sichern
-    3. Root-Cause-Analysis
-    4. Service-Validation
-    5. Fix entwickeln
-    6. Re-Deploy mit zusätzlichen Tests
+- [x] 09 - Rollback-Prozedur dokumentieren (45 Min) - ✅ Abgeschlossen 2026-04-12
+  - **Datei:** `.Roo/project-rules/07-rollback-procedure.md`
+  - **Lösung:** 6-Schritte-Rollback-Prozedur vollständig dokumentiert
+  - **Features:** Sofort-Maßnahmen, Log-Sicherung, RCA, Service-Validation
   - **Begründung:** Sicherheitsnetz bei Deployment-Problemen
 
-- [ ] 10 - Hardware-Specs und Versionen dokumentieren (30 Min)
-  - **Datei:** `.roo/rules/01-mission-and-stack.md`
-  - **Problem:** Keine VPS-Anforderungen, keine Software-Versionen dokumentiert
-  - **Lösung:** Technische Anforderungen hinzufügen:
-    - VPS-Mindestspecs (2 CPU, 4GB RAM, 50GB SSD)
-    - Software-Versionen (Ubuntu 22.04, Caddy 2.7.x, etc.)
-    - Backup-Strategie (tägliche Snapshots)
-    - Skalierungskonzept (Single-User → Multi-User)
+- [x] 10 - Hardware-Specs und Versionen dokumentieren (30 Min) - ✅ Abgeschlossen 2026-04-12
+  - **Datei:** `.Roo/project-rules/08-hardware-and-versions.md`
+  - **Lösung:** Vollständige Hardware- und Versionsanforderungen dokumentiert
+  - **Features:** VPS-Specs, Software-Versionen, Backup-Strategie, Skalierungskonzept
+  - **Bonus:** `scripts/utils/verify-system-specs.sh` für automatische Validierung erstellt
   - **Begründung:** Reproduzierbarkeit und Skalierbarkeit
 
+**Sprint 2 Status:** ✅ VOLLSTÄNDIG ABGESCHLOSSEN (10/10 Tasks) - 2026-04-12
+
 **Gesamt-Impact:** 🔥🔥 HOCH - Verbessert Wartbarkeit langfristig
+
+---
+
+## Housekeeping Sprint - Projekt-Grundlage stabilisiert ✅
+
+**Status:** ✅ VOLLSTÄNDIG ABGESCHLOSSEN (2026-04-12 05:28 UTC)
+**Dauer:** ~6 Stunden über 24h verteilt
+**Commits:** 2710ca2, b54c702, 8d9ccc0, caf79b6, 34cce56
+
+### Abgeschlossene Tasks (5/5):
+
+1. **[x] Quick-Status-Dashboard** (30 Min)
+   - Erstellt: [`STATUS.md`](../../STATUS.md)
+   - Verlinkt von README.md und docs/project/README.md
+   - Beantwortet "Was ist noch zu tun?" auf einen Blick
+
+2. **[x] .roo/.Roo Dokumentation** (1h)
+   - Erstellt: [`.Roo/README.md`](../../.Roo/README.md)
+   - Erstellt: [`.Roo/CONSOLIDATION-STATUS.md`](../../.Roo/CONSOLIDATION-STATUS.md)
+   - Status: Verzeichnisse waren bereits konsolidiert, nur dokumentiert
+
+3. **[x] Shellcheck-Analyse** (1h)
+   - Analysiert: 39 Bash-Scripts
+   - Ergebnis: 0 kritische Fehler ✅, 189 Warnings
+   - Report: [`reports/shellcheck/SHELLCHECK-REPORT.md`](../../reports/shellcheck/SHELLCHECK-REPORT.md)
+
+4. **[x] .Roo-Regeln Sprint 2** (2,5h)
+   - Task 08: Bug-Fixing-Workflow → [`.Roo/project-rules/06-bug-fixing-workflow.md`](../../.Roo/project-rules/06-bug-fixing-workflow.md)
+   - Task 09: Rollback-Prozedur → [`.Roo/project-rules/07-rollback-procedure.md`](../../.Roo/project-rules/07-rollback-procedure.md)
+   - Task 10: Hardware-Specs → [`.Roo/project-rules/08-hardware-and-versions.md`](../../.Roo/project-rules/08-hardware-and-versions.md)
+
+5. **[x] Code-Quality-Standards** (2h)
+   - Erstellt: [`.Roo/project-rules/05-code-quality-standards.md`](../../.Roo/project-rules/05-code-quality-standards.md) v1.0.0
+   - Quality-Score: 67% (aktuell) → Ziel: >80%
+   - Refactoring-Roadmap: 3 Phasen definiert
+
+### Impact
+
+- ✅ Schnelle Statusübersicht via STATUS.md
+- ✅ Vollständige Projekt-Regelwerke in .Roo/
+- ✅ Technische Schulden identifiziert (Shellcheck)
+- ✅ Wartbarkeit langfristig gesichert
+
+**Housekeeping-Ziel erreicht:** Projekt-Grundlage stabilisiert, "Was ist noch zu tun?" klar ersichtlich.
 
 ---
 
