@@ -598,7 +598,107 @@ Bearbeite [`.github/markdown-link-check-config.json`](../../.github/markdown-lin
 
 ---
 
+## 12. Branch Protection & Deployment
+
+### Branch Protection Rules
+
+**Requirement:** Alle Änderungen an `docs/**` müssen CI/CD-Validierung bestehen.
+
+**Geschützte Checks:**
+- ✅ **Validate Documentation Rules** (validate-docs.sh)
+  - Dokumentengröße: 100-500 Zeilen (ohne Diagramme)
+  - Keine todo.md-Referenzen
+  - Keine gebrochenen Links
+
+**Konfiguration:**
+- Status Check: `Validate Documentation Rules` (required)
+- Strict: Branch muss up-to-date sein
+- Force Pushes: Verboten
+- Branch Deletion: Verboten
+- Admin Bypass: Enabled (für Notfälle)
+
+**Setup-Anleitung:**
+
+#### Via GitHub CLI (empfohlen):
+```bash
+# Status prüfen
+gh api repos/HaraldKiessling/DevSystem/branches/main/protection
+
+# Branch Protection aktivieren
+gh api --method PUT repos/HaraldKiessling/DevSystem/branches/main/protection \
+  --field required_status_checks[strict]=true \
+  --field required_status_checks[contexts][]=Validate\ Documentation\ Rules \
+  --field enforce_admins=false \
+  --field allow_force_pushes=false \
+  --field allow_deletions=false
+```
+
+#### Via GitHub Web UI:
+1. Gehe zu: https://github.com/HaraldKiessling/DevSystem/settings/branches
+2. Klicke "Add branch protection rule"
+3. Branch name pattern: `main`
+4. Aktiviere: ☑️ "Require status checks to pass before merging"
+5. Suche und wähle: `Validate Documentation Rules`
+6. Aktiviere: ☑️ "Require branches to be up to date before merging"
+7. Klicke "Create"
+
+### Deployment-Workflow
+
+**1. Feature-Branch erstellen:**
+```bash
+git checkout -b docs/update-readme
+# Ändere Dokumentation
+git add docs/
+git commit -m "docs: Update README with new info"
+git push origin docs/update-readme
+```
+
+**2. GitHub Actions prüft automatisch:**
+- Dokumentenstruktur ✅
+- Größenregeln ✅
+- todo.md-Referenzen ✅
+
+**3. Bei Success:**
+```bash
+# Merge via CLI
+gh pr create --title "docs: Update README" --body "Updates README with..."
+gh pr merge --auto --squash
+
+# Oder: Direct merge (nach CI/CD Success)
+git checkout main
+git pull
+git merge docs/update-readme
+git push origin main
+```
+
+**4. Bei Failure:**
+- Fehler in GitHub Actions Log analysieren
+- Lokal mit `./scripts/docs/validate-docs.sh` prüfen
+- Fehler beheben
+- Erneut pushen → CI/CD läuft automatisch
+
+### Green Green Deployment
+
+**Konzept:**
+- Nur dokumentationskonformer Code landet in `main`
+- CI/CD validiert jeden Push/PR
+- Automatische Blockierung bei Verstößen
+- Keine manuellen Reviews für Dokumentationsregeln nötig
+
+**Status:**
+- ✅ Aktiviert seit: 2026-04-12
+- ✅ Status Check: `Validate Documentation Rules`
+- ✅ Branch: `main` geschützt
+
+---
+
 ## Änderungshistorie
+
+### 2026-04-12 14:14 UTC
+- Abschnitt "Branch Protection & Deployment" hinzugefügt
+- Setup-Anleitung (GitHub CLI + Web UI)
+- Deployment-Workflow dokumentiert
+- Green Green Deployment-Konzept beschrieben
 
 ### 2026-04-12 13:30 UTC
 - Abschnitt "Automatische Regelüberwachung" hinzugefügt

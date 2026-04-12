@@ -334,8 +334,40 @@ Closes #42
 - [`testkonzept.md`](../concepts/testkonzept.md) - Testing-Strategie
 - [`sicherheitskonzept.md`](../concepts/sicherheitskonzept.md) - Security-Architektur
 
+## 11. Branch Protection & Deployment
+
+### Green Green Deployment für Dokumentation
+
+**Branch Protection auf `main`:**
+- ✅ Dokumentations-Validierung muss erfolgreich sein
+- ✅ validate-docs.sh muss durchlaufen (Größe, Referenzen, Diagramme)
+- ❌ Direct pushes zu main mit fehlerhafter Dokumentation werden blockiert
+
+**Workflow:**
+1. Erstelle Feature-Branch: `git checkout -b docs/feature-name`
+2. Ändere Dokumentation
+3. Pushe Branch: `git push origin docs/feature-name`
+4. GitHub Actions läuft automatisch
+5. Bei ✅: Merge möglich
+6. Bei ❌: Fehler beheben, erneut pushen
+
+**Status Check:**
+- Required: "Validate Documentation Rules" (aus docs-validation.yml)
+- Strict mode: Branch muss up-to-date mit main sein
+- Force pushes: Verboten
+- Branch deletion: Verboten
+
+**Setup-Details:**
+Siehe [`documentation-governance.md`](../operations/documentation-governance.md#branch-protection--deployment)
+
+**Override nur im Notfall:**
+```bash
+# Admin-Override bei critical hotfix (nur wenn absolut notwendig)
+# Kontaktiere Tech-Lead vor Override
+```
+
 ---
 
-**Version**: 2.0 (150+ Zeilen)  
-**Letzte Aktualisierung**: 2026-04-12  
+**Version**: 2.1 (Branch Protection)
+**Letzte Aktualisierung**: 2026-04-12 14:14 UTC
 **Maintainer**: DevSystem Team via Roo

@@ -4,6 +4,73 @@ Chronologische Aufzeichnung aller Änderungen an der Projektdokumentation.
 
 ---
 
+## 2026-04-12 - Branch Protection aktiviert (Green Green Deployment)
+
+**Änderungen:**
+- **Branch Protection auf `main`:** Via GitHub CLI aktiviert
+  - Required Status Check: "Validate Documentation Rules" (aus docs-validation.yml)
+  - Strict mode: enabled (Branch muss up-to-date sein)
+  - Force pushes: verboten
+  - Branch deletion: verboten
+  - Admin bypass: enabled (für Notfälle)
+- **PROJECT-RULES.md:** Abschnitt 11 "Branch Protection & Deployment" hinzugefügt
+  - Green Green Deployment-Workflow dokumentiert
+  - Status Check-Anforderungen erklärt
+  - Override-Policy für Notfälle definiert
+- **documentation-governance.md:** Abschnitt 12 "Branch Protection & Deployment" hinzugefügt
+  - Setup-Anleitung (GitHub CLI + Web UI)
+  - Deployment-Workflow (Feature-Branch → CI/CD → Merge)
+  - Green Green Deployment-Konzept erklärt
+  - Failure-Handling dokumentiert
+
+**Rationale:**
+- Etabliert "Green Green Deployment" für Dokumentation
+- Direct pushes mit Validierungsfehlern werden automatisch blockiert
+- CI/CD-Pipeline wird zum Quality Gate
+- Keine manuellen Reviews für Dokumentationsregeln nötig
+- Konsistente Dokumentationsqualität in `main` Branch
+
+**Green Green Deployment:**
+- Nur dokumentationskonformer Code landet in `main`
+- Automatische Validierung: Größe, todo.md-Referenzen, Links
+- CI/CD blockiert fehlerhafte Merges
+- "Green" CI/CD = "Green" für Merge
+
+**GitHub API Konfiguration:**
+```bash
+gh api --method PUT repos/HaraldKiessling/DevSystem/branches/main/protection \
+  --field required_status_checks[strict]=true \
+  --field required_status_checks[contexts][]=Validate\ Documentation\ Rules \
+  --field enforce_admins=false \
+  --field allow_force_pushes=false \
+  --field allow_deletions=false
+```
+
+**Status:**
+- ✅ Branch Protection aktiviert
+- ✅ Status Check: `Validate Documentation Rules` (required)
+- ✅ Strict mode: enabled
+- ✅ Dokumentation aktualisiert
+
+**Dateien geändert:**
+- docs/project/PROJECT-RULES.md (Abschnitt 11 hinzugefügt)
+- docs/operations/documentation-governance.md (Abschnitt 12 hinzugefügt)
+- docs/DOCUMENTATION-CHANGELOG.md (dieser Eintrag)
+
+**Verifizierung:**
+```bash
+# Status Check überprüfen
+gh api repos/HaraldKiessling/DevSystem/branches/main/protection
+```
+
+**Impact:**
+- ✅ Dokumentationsqualität wird automatisch durchgesetzt
+- ✅ Fehlerhafte Dokumentation kann nicht mehr in `main` landen
+- ✅ CI/CD als Quality Gate etabliert
+- ✅ Workflow für alle Contributor transparent
+
+---
+
 ## 2026-04-12 - CI/CD Validation pragmatisch optimiert (Run #16 Fix)
 
 **Root-Cause-Analyse:**
