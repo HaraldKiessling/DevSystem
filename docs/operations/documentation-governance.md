@@ -487,6 +487,72 @@ Health-Score = (Aktualität × 0.4) + (Vollständigkeit × 0.3) +
 - **Git-Hooks Setup:** `bash scripts/docs/setup-git-hooks.sh`
 - **CI/CD:** GitHub Actions → Documentation Validation
 
+---
+
+## 11. Diagrammrichtlinien
+
+### 11.1 Unterstützte Diagrammtypen
+
+**Mermaid** (bevorzugt - nativ in GitHub):
+- Flowcharts: `graph TD` / `graph LR`
+- Sequence Diagrams: `sequenceDiagram`
+- State Diagrams: `stateDiagram-v2`
+- Class Diagrams: `classDiagram`
+- Entity Relationship: `erDiagram`
+
+**Beispiel:**
+```mermaid
+graph TD
+    A[Start] --> B{Entscheidung}
+    B -->|Ja| C[Aktion 1]
+    B -->|Nein| D[Aktion 2]
+```
+
+**PlantUML, Graphviz/DOT** (erweitert):
+- PlantUML: ```plantuml```
+- Graphviz: ```dot```, ```graphviz```
+
+### 11.2 Diagramme & Zeilenzählung
+
+Diagramm-Zeilen werden **NICHT** zur Dokumentengröße gezählt:
+- Ermöglicht umfangreiche Visualisierungen
+- Fördert verständliche Dokumentation
+- Validierungsskript ignoriert Diagramm-Blöcke automatisch
+
+**Validierungs-Ausgabe:**
+```
+ℹ️  docs/strategies/branch-strategie.md: 442 Zeilen (30 Diagramm-Zeilen ausgenommen)
+```
+
+### 11.3 Wann Diagramme verwenden?
+
+✅ **Geeignet für:**
+- Workflows mit >3 Schritten
+- Architektur mit >4 Komponenten
+- State Machines mit >3 Zuständen
+- Deployment-Prozesse
+- Komplexe Datenflüsse
+
+❌ **Nicht geeignet für:**
+- Einfache Listen
+- Lineare 2-Schritt-Prozesse
+- Rein textuelle Informationen
+- Tabellen (nutze Markdown-Tabellen)
+
+### 11.4 Best Practices
+
+**DO:**
+- ✅ Diagramme für komplexe Zusammenhänge nutzen
+- ✅ Kurze Textbeschreibung vor/nach Diagramm
+- ✅ Mermaid bevorzugen (GitHub native)
+- ✅ Konsistente Notation innerhalb eines Dokuments
+
+**DON'T:**
+- ❌ Diagramme für triviale Prozesse
+- ❌ Diagramme ohne Kontext
+- ❌ Übermäßig komplexe Diagramme (>15 Knoten)
+- ❌ Verschiedene Diagramm-Typen für gleichen Zweck mischen
+
 ## Automatische Regelüberwachung
 
 ### Pre-commit Hook

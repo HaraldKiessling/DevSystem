@@ -17,6 +17,30 @@
 - **Inhaltsverzeichnis**: Bei Dokumenten > 50 Zeilen
 - **Datum**: ISO-Format (YYYY-MM-DD) in Changelog-Einträgen
 
+### Dokumentengröße & Diagramme
+
+**Zielbereich:** 100-500 Zeilen pro Dokument
+
+**Diagramme werden NICHT gezählt:**
+- Mermaid-Diagramme (```mermaid```)
+- PlantUML-Diagramme (```plantuml```)
+- Graphviz/DOT-Diagramme (```dot```, ```graphviz```)
+
+**Rationale:**
+Diagramme verbessern die Lesbarkeit und verdichten Information. Sie sind ausdrücklich erwünscht für:
+- Workflow-Visualisierung (Sequenz-, Flow-Diagramme)
+- Architektur-Übersichten (Komponentendiagramme)
+- State-Machines und Zustandsübergänge
+- Deployment-Topologien
+
+**Beispiel:**
+Ein Dokument mit 450 Textzeilen + 100 Zeilen Mermaid-Diagramm = 450 Zeilen (für Validierung)
+
+**Best Practices:**
+- Nutze Diagramme für komplexe Zusammenhänge
+- Ergänze Diagramme mit kurzen Textbeschreibungen
+- Bevorzuge Mermaid (nativ in GitHub)
+
 ### Automatische Validierung
 
 Die Dokumentationsregeln werden automatisch überwacht:

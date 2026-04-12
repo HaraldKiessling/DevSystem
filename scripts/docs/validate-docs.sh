@@ -8,6 +8,43 @@ DOCS_DIR="docs"
 MIN_LINES=100
 MAX_LINES=500
 
+# Funktion: Zähle Zeilen ohne Diagramm-Blöcke
+count_lines_without_diagrams() {
+    local file="$1"
+    local total_lines=$(wc -l < "$file")
+    local diagram_lines=0
+    
+    # Zähle Zeilen in Mermaid-Diagrammen
+    local in_mermaid=0
+    while IFS= read -r line; do
+        if [[ "$line" =~ ^\`\`\`mermaid ]]; then
+            in_mermaid=1
+        fi
+        if [ "$in_mermaid" -eq 1 ]; then
+            diagram_lines=$((diagram_lines + 1))
+        fi
+        if [[ "$line" =~ ^\`\`\`$ ]] && [ "$in_mermaid" -eq 1 ]; then
+            in_mermaid=0
+        fi
+    done < "$file"
+    
+    # Zähle Zeilen in PlantUML/andere Diagramme
+    local in_other=0
+    while IFS= read -r line; do
+        if [[ "$line" =~ ^\`\`\`(plantuml|dot|graphviz) ]]; then
+            in_other=1
+        fi
+        if [ "$in_other" -eq 1 ]; then
+            diagram_lines=$((diagram_lines + 1))
+        fi
+        if [[ "$line" =~ ^\`\`\`$ ]] && [ "$in_other" -eq 1 ]; then
+            in_other=0
+        fi
+    done < "$file"
+    
+    echo $((total_lines - diagram_lines))
+}
+
 # TODO: Diese Ausnahmen sind temporär. Siehe Issue #XX für vollständige Migration.
 # Ausnahmen für zu große Dokumente (temporär bis Migration)
 MAX_LINES_EXCEPTIONS="issue-examples.md|feature-issues-batch-1.md|feature-workflow.md|documentation-governance.md|QS-SYSTEM-OPTIMIZATION-STEP1.md|QS-SYSTEM-OPTIMIZATION-SUMMARY.md|CODE-REVIEW-REPORT-STEP3.md|DOCUMENTATION-CHANGELOG.md|qs-implementierungsplan-final.md|qs-github-integration-strategie.md|deployment-prozess.md|sicherheitskonzept.md|code-server-konzept.md|caddy-konzept.md|qs-vps-konzept.md|ki-integration-konzept.md|testkonzept.md"
@@ -22,7 +59,8 @@ violations=0
 
 # 1. Prüfe Dokumentengrößen (ohne Archive)
 for file in $(find "$DOCS_DIR" -name "*.md" -not -path "*/archive/*" -type f); do
-    lines=$(wc -l < "$file")
+    lines=$(count_lines_without_diagrams "$file")
+    total_lines=$(wc -l < "$file")
     filename=$(basename "$file")
     
     # Überspringe READMEs und Index-Dateien
@@ -33,6 +71,12 @@ for file in $(find "$DOCS_DIR" -name "*.md" -not -path "*/archive/*" -type f); d
     # Überspringe MAX_LINES Ausnahmen
     if [[ "$MAX_LINES_EXCEPTIONS" =~ "$filename" ]]; then
         continue
+    fi
+    
+    # Optional: Info ausgeben wenn Diagramme vorhanden
+    diagram_lines=$((total_lines - lines))
+    if [ "$diagram_lines" -gt 0 ]; then
+        echo "ℹ️  $file: $lines Zeilen ($diagram_lines Diagramm-Zeilen ausgenommen)"
     fi
     
     # Prüfe Mindestgröße

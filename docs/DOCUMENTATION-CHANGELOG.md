@@ -4,6 +4,54 @@ Chronologische Aufzeichnung aller Änderungen an der Projektdokumentation.
 
 ---
 
+## 2026-04-12 - Diagramm-Regel implementiert
+
+**Änderungen:**
+- **validate-docs.sh:** Diagramme werden nicht mehr zur Zeilenzählung gezählt
+  - `count_lines_without_diagrams()` Funktion hinzugefügt
+  - Unterstützt Mermaid (```mermaid```), PlantUML (```plantuml```), Graphviz (```dot```, ```graphviz```)
+  - Informative Ausgabe bei Dokumenten mit Diagrammen: "X Zeilen (Y Diagramm-Zeilen ausgenommen)"
+  - Validierungslogik nutzt jetzt `count_lines_without_diagrams()` statt `wc -l`
+- **PROJECT-RULES.md:** Abschnitt "Dokumentengröße & Diagramme" hinzugefügt
+  - Erklärt, dass Diagramme nicht zur Zeilenzählung beitragen
+  - Rationale: Diagramme verbessern Lesbarkeit und verdichten Information
+  - Anwendungsgebiete: Workflow-Visualisierung, Architektur-Übersichten, State-Machines
+  - Best Practices: Mermaid bevorzugen, Diagramme mit Textbeschreibungen ergänzen
+- **documentation-governance.md:** Neuer Abschnitt 11 "Diagrammrichtlinien"
+  - Unterstützte Diagrammtypen mit Beispielen (Mermaid bevorzugt)
+  - Diagramme & Zeilenzählung: Erklärung der automatischen Ausnahme
+  - Wann Diagramme verwenden: Geeignete vs. ungeeignete Anwendungsfälle
+  - Best Practices: DO/DON'T-Liste für Diagramm-Nutzung
+- **scripts/docs/README.md:** Abschnitt "Diagramme & Zeilenzählung" hinzugefügt
+  - Dokumentation der automatischen Diagramm-Zeilen-Ausnahme
+  - Beispiel-Ausgabe
+
+**Rationale:**
+- Diagramme (Mermaid, PlantUML, etc.) verdichten Information und verbessern Lesbarkeit
+- Sie sollten NICHT zur 100-500 Zeilen-Regel gezählt werden
+- Fördert Nutzung von Visualisierungen für komplexe Sachverhalte
+- Dokumente mit vielen Diagrammen haben effektiv weniger "zählende" Zeilen
+
+**Impact:**
+- Dokumente mit Diagrammen werden automatisch korrekt bewertet
+- Beispiel: `branch-strategie.md` mit 2 Mermaid-Diagrammen (~30 Zeilen)
+- Effektive Zeilenzahl: 472 → ~442 Zeilen (automatisch berechnet)
+
+**Dateien geändert:**
+- scripts/docs/validate-docs.sh (+41 Zeilen Funktion, Logik angepasst)
+- docs/project/PROJECT-RULES.md (Abschnitt "Dokumentengröße & Diagramme")
+- docs/operations/documentation-governance.md (Abschnitt 11 "Diagrammrichtlinien")
+- scripts/docs/README.md (Abschnitt "Diagramme & Zeilenzählung")
+- docs/DOCUMENTATION-CHANGELOG.md (dieser Eintrag)
+
+**Validierung:**
+```bash
+./scripts/docs/validate-docs.sh
+# Zeigt jetzt: "ℹ️  X Zeilen (Y Diagramm-Zeilen ausgenommen)"
+```
+
+---
+
 ## 2026-04-12 - Validierungsskript Hotfix
 
 **Änderungen:**
