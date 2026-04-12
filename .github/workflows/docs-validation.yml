@@ -36,48 +36,22 @@ jobs:
         with:
           fetch-depth: 0  # Volle Historie für Vergleiche
       
-      - name: Check todo.md Timestamp Freshness
-        id: todo-check
+      - name: Check Task Management Migration
+        id: task-management-check
         run: |
-          echo "## 📋 todo.md Timestamp Check" >> $GITHUB_STEP_SUMMARY
+          echo "## 📋 Task Management Check" >> $GITHUB_STEP_SUMMARY
           
-          # Extrahiere Zeitstempel
-          if [ -f "docs/project/todo.md" ]; then
-            TODO_TS=$(grep -oP '(?<=\*\*Stand:\*\* )\d{4}-\d{2}-\d{2} \d{2}:\d{2}' docs/project/todo.md || echo "")
-            
-            if [ -z "$TODO_TS" ]; then
-              echo "❌ **ERROR:** Kein Zeitstempel gefunden in todo.md" >> $GITHUB_STEP_SUMMARY
-              echo "status=error" >> $GITHUB_OUTPUT
-              exit 1
-            fi
-            
-            echo "- **Zeitstempel:** $TODO_TS UTC" >> $GITHUB_STEP_SUMMARY
-            
-            # Berechne Alter
-            TODO_EPOCH=$(date -d "$TODO_TS UTC" +%s)
-            CURRENT_EPOCH=$(date +%s)
-            DIFF_HOURS=$(( (CURRENT_EPOCH - TODO_EPOCH) / 3600 ))
-            
-            echo "- **Alter:** $DIFF_HOURS Stunden" >> $GITHUB_STEP_SUMMARY
-            
-            if [ $DIFF_HOURS -gt 168 ]; then
-              echo "❌ **ERROR:** todo.md ist $DIFF_HOURS Stunden alt (>7 Tage)" >> $GITHUB_STEP_SUMMARY
-              echo "status=error" >> $GITHUB_OUTPUT
-              exit 1
-            elif [ $DIFF_HOURS -gt 72 ]; then
-              echo "⚠️ **WARNING:** todo.md ist $DIFF_HOURS Stunden alt (>3 Tage)" >> $GITHUB_STEP_SUMMARY
-              echo "status=warning" >> $GITHUB_OUTPUT
-            elif [ $DIFF_HOURS -gt 24 ]; then
-              echo "⚠️ **WARNING:** todo.md ist $DIFF_HOURS Stunden alt (>24h)" >> $GITHUB_STEP_SUMMARY
-              echo "status=warning" >> $GITHUB_OUTPUT
-            else
-              echo "✅ **OK:** todo.md ist aktuell ($DIFF_HOURS Stunden)" >> $GITHUB_STEP_SUMMARY
-              echo "status=ok" >> $GITHUB_OUTPUT
-            fi
-          else
-            echo "❌ **ERROR:** todo.md nicht gefunden" >> $GITHUB_STEP_SUMMARY
+          # Prüfe ob alte Dateien noch existieren (sollten gelöscht sein)
+          if [ -f "docs/project/todo.md" ] || [ -f "STATUS.md" ]; then
+            echo "❌ **ERROR:** Obsolete Task-Management-Dateien gefunden" >> $GITHUB_STEP_SUMMARY
+            echo "- Diese Dateien sollten nach Migration zu GitHub gelöscht sein" >> $GITHUB_STEP_SUMMARY
             echo "status=error" >> $GITHUB_OUTPUT
             exit 1
+          else
+            echo "✅ **OK:** Migration zu GitHub Issues/Projects abgeschlossen" >> $GITHUB_STEP_SUMMARY
+            echo "- Task-Management erfolgt über GitHub Issues" >> $GITHUB_STEP_SUMMARY
+            echo "- Keine obsoleten Dateien vorhanden" >> $GITHUB_STEP_SUMMARY
+            echo "status=ok" >> $GITHUB_OUTPUT
           fi
       
       - name: Check Branch References in Documentation
