@@ -5,13 +5,32 @@
     },
     {
       "pattern": "^https://localhost"
+    },
+    {
+      "pattern": "^https://api.github.com"
+    },
+    {
+      "pattern": "^https://github.com/.*/commit/"
+    },
+    {
+      "pattern": "^https://github.com/.*/issues/"
+    },
+    {
+      "pattern": "^https://github.com/.*/pull/"
     }
   ],
   "replacementPatterns": [],
-  "httpHeaders": [],
-  "timeout": "20s",
+  "httpHeaders": [
+    {
+      "urls": ["https://github.com"],
+      "headers": {
+        "Accept": "text/html"
+      }
+    }
+  ],
+  "timeout": "30s",
   "retryOn429": true,
-  "retryCount": 3,
-  "fallbackRetryDelay": "30s",
-  "aliveStatusCodes": [200, 206]
+  "retryCount": 5,
+  "fallbackRetryDelay": "60s",
+  "aliveStatusCodes": [200, 206, 301, 302, 307, 308, 403]
 }

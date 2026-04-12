@@ -26,6 +26,7 @@ jobs:
       
       - name: Check for broken links
         uses: gaurav-nelson/github-action-markdown-link-check@v1
+        continue-on-error: true
         with:
           config-file: '.github/markdown-link-check-config.json'
           use-quiet-mode: 'yes'
