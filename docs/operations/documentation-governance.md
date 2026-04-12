@@ -128,7 +128,7 @@ Dieses Dokument definiert die Governance für die Projekt-Dokumentation, einschl
 
 | Status | Marker | Bedeutung | Verwendung |
 |--------|--------|-----------|-----------|
-| Abgeschlossen | `[x]` | Task vollständig erledigt | todo.md Tasks |
+| Abgeschlossen | `[x]` | Task vollständig erledigt | GitHub Issues |
 | In Arbeit | `[-]` | Aktiv in Bearbeitung | Orchestrator Reminders |
 | Offen | `[ ]` | Noch nicht begonnen | Default für neue Tasks |
 | Blockiert | `[!]` | Wartet auf Dependency | Bei Blocker-Situation |
@@ -214,7 +214,7 @@ docs/archive/
 
 | Frequenz | Aktivität | Verantwortlich | Aufwand | Checkliste |
 |----------|-----------|----------------|---------|------------|
-| **Täglich** | Quick-Check | Developer/AI | 5 Min | todo.md vs. Git-Status |
+| **Täglich** | Quick-Check | Developer/AI | 5 Min | GitHub Issues vs. Git-Status |
 | **Wöchentlich** | Full-Review | Tech-Lead | 30 Min | Alle Haupt-Docs vs. Archive |
 | **Monatlich** | Audit | Product-Owner | 2h | Struktur-Review, Redundanzen |
 | **Quarterly** | Strategic Review | Stakeholder | 4h | Vision-Alignment, Roadmap |
@@ -240,7 +240,7 @@ grep -r "$(git branch --show-current)" docs/
 
 ### 4.3 Full-Review-Checkliste (Wöchentlich)
 
-- [ ] **todo.md:** Zeitstempel < 7 Tage, keine veralteten Tasks
+- [ ] **GitHub Issues:** Keine veralteten/geschlossenen Issues offen
 - [ ] **CHANGELOG.md:** Alle Merges dokumentiert
 - [ ] **Status-Reports:** Aktuell mit Live-System synchron
 - [ ] **Archive vs. Main:** Keine Duplikate, klare Trennung
@@ -270,7 +270,7 @@ graph TD
     B -->|Ja| C[Dokumentation aktualisieren]
     B -->|Nein| D[Commit & Push]
     C --> E[Zeitstempel aktualisieren]
-    E --> F[todo.md Task markieren]
+    E --> F[GitHub Issue aktualisieren]
     F --> G[CHANGELOG.md eintragen]
     G --> H[Pre-Merge-Check]
     H --> I{Alle Checks bestanden?}
@@ -287,7 +287,7 @@ graph TD
 2. **Archiv-Metadaten hinzufügen** (Status, Grund, Nachfolger)
 3. **Nach `docs/archive/[kategorie]/` verschieben**
 4. **Referenzen im Hauptdokument aktualisieren**
-5. **todo.md & CHANGELOG.md aktualisieren**
+5. **GitHub Issues & CHANGELOG.md aktualisieren**
 6. **Commit:** `chore(docs): archive [document-name]`
 
 ### 5.3 Eskalations-Prozess
@@ -384,7 +384,7 @@ graph TD
 - [x] E2E-Tests passed
 
 ## Dokumentation
-- [x] todo.md aktualisiert
+- [x] GitHub Issues aktualisiert
 - [x] CHANGELOG.md aktualisiert
 ```
 
@@ -487,9 +487,59 @@ Health-Score = (Aktualität × 0.4) + (Vollständigkeit × 0.3) +
 - **Git-Hooks Setup:** `bash scripts/docs/setup-git-hooks.sh`
 - **CI/CD:** GitHub Actions → Documentation Validation
 
+## Automatische Regelüberwachung
+
+### Pre-commit Hook
+```bash
+# Einmalig einrichten:
+cp scripts/docs/validate-docs.sh .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+```
+
+### GitHub Actions
+Automatische Validierung bei jedem PR:
+- Dokumentengröße (100-500 Zeilen)
+- todo.md-Referenzen
+- Broken Links
+- Markdown-Syntax
+
+Siehe [`.github/workflows/docs-validation.yml`](../../.github/workflows/docs-validation.yml)
+
+### Manuelle Prüfung
+```bash
+./scripts/docs/validate-docs.sh
+```
+
+### Geprüfte Regeln
+
+| Regel | Beschreibung | Ausnahmen |
+|-------|--------------|-----------|
+| **Mindestgröße** | Min. 100 Zeilen pro Dokument | README.md, CHANGELOG.md |
+| **Maximalgröße** | Max. 500 Zeilen pro Dokument | issue-examples.md |
+| **todo.md-Referenzen** | Keine Verweise auf todo.md | Archivierte Dokumente |
+| **Broken Links** | Alle Links müssen gültig sein | localhost-Links |
+
+### Konfiguration
+
+**Ausnahmen definieren:**
+Bearbeite [`scripts/docs/validate-docs.sh`](../../scripts/docs/validate-docs.sh):
+```bash
+MAX_LINES_EXCEPTIONS="issue-examples.md other-file.md"
+```
+
+**Link-Check-Anpassungen:**
+Bearbeite [`.github/markdown-link-check-config.json`](../../.github/markdown-link-check-config.json)
+
 ---
 
 ## Änderungshistorie
+
+### 2026-04-12 13:30 UTC
+- Abschnitt "Automatische Regelüberwachung" hinzugefügt
+- Dokumentation der Pre-commit Hook-Installation
+- GitHub Actions-Workflow-Beschreibung
+- Übersicht der geprüften Regeln mit Ausnahmen
+- Konfigurationsanleitung
 
 ### 2026-04-12 04:19 UTC
 - Initiale Version 1.0.0 erstellt
@@ -500,6 +550,7 @@ Health-Score = (Aktualität × 0.4) + (Vollständigkeit × 0.3) +
 
 ---
 
-**Governance-Framework erstellt am:** 2026-04-12 04:19 UTC  
-**Basierend auf:** Root-Cause-Analyse vom 2026-04-11  
+**Governance-Framework erstellt am:** 2026-04-12 04:19 UTC
+**Letzte Aktualisierung:** 2026-04-12 13:30 UTC
+**Basierend auf:** Root-Cause-Analyse vom 2026-04-11
 **Status:** ✅ Aktiv und enforced via CI/CD

@@ -359,10 +359,15 @@ Nach erfolgreichem Board-Setup:
 
 ## 📚 Referenzen
 
+**GitHub:**
 - [GitHub Projects Documentation](https://docs.github.com/en/issues/planning-and-tracking-with-projects)
 - [GitHub Mobile App](https://github.com/mobile)
+
+**Workflow:**
 - [Feature Workflow Guide](feature-workflow.md)
-- [Issue Guidelines](issue-guidelines.md)
+- [Issue Guidelines](issue-guidelines.md) - Kernkonzepte & Prozesse
+- [Acceptance Criteria](issue-acceptance-criteria.md) - AC-Framework
+- [Issue Examples](issue-examples.md) - Templates
 
 ---
 

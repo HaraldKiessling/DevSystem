@@ -777,11 +777,11 @@ ssh -i ~/.ssh/qs-vps-github root@<qs-vps-ip> "echo SSH OK"
 
 1. **README.md** - Workflow-Badges hinzufügen
 2. **scripts/QS-DEVSERVER-WORKFLOW.md** - GitHub Actions integrieren
-3. **todo.md** - Post-MVP Abschnitt updaten
+3. **GitHub Issues** - Post-MVP Tasks als Issues erstellen
 
 ---
 
-## 📋 Finale Todo-Liste für todo.md
+## 📋 Finale Task-Liste für GitHub Issues
 
 ```markdown
 ## Post-MVP: QS-GitHub-Integration (Nächste Ausbaustufe)

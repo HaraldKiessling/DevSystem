@@ -518,7 +518,12 @@ Empfohlen:
 
 ## 📖 Weiterführende Dokumentation
 
-- [`issue-guidelines.md`](./issue-guidelines.md) - Detaillierte Guidelines für Issue-Erstellung
+**Issue Management:**
+- [`issue-guidelines.md`](./issue-guidelines.md) - Issue-Erstellung, Lifecycle, Labels & Commits
+- [`issue-acceptance-criteria.md`](./issue-acceptance-criteria.md) - AC-Framework & Best Practices
+- [`issue-examples.md`](./issue-examples.md) - Vollständige Templates & Beispiele
+
+**Git Workflow:**
 - [`git-workflow.md`](./git-workflow.md) - Git-Workflow und Commit-Konventionen
 - [`.github/ISSUE_TEMPLATE/feature.md`](../../.github/ISSUE_TEMPLATE/feature.md) - Feature-Template
 - [`.github/ISSUE_TEMPLATE/bug.md`](../../.github/ISSUE_TEMPLATE/bug.md) - Bug-Template

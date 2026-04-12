@@ -127,7 +127,9 @@ gh issue create \
 |----------|-------|--------|
 | [**Implementierungs-Report**](../reports/issue-1-migration-report.md) | Vollständiger Report, Metriken, Lessons Learned | 300+ |
 | [**Feature Workflow**](feature-workflow.md) | Workflow-Guide (Icebox → Done) | 531 |
-| [**Issue Guidelines**](issue-guidelines.md) | Best Practices, AC-Frameworks | 947 |
+| [**Issue Guidelines**](issue-guidelines.md) | Kernkonzepte & Prozesse | ~280 |
+| [**Acceptance Criteria**](issue-acceptance-criteria.md) | AC-Framework & Best Practices | ~330 |
+| [**Issue Examples**](issue-examples.md) | Templates & Beispiele | ~600 |
 | [**Feature Issues Batch 1**](feature-issues-batch-1.md) | 15 ready-to-deploy Issues | 883 |
 
 ### Templates
@@ -215,7 +217,9 @@ Nach Completion solltest du haben:
 **Bei Problemen:**
 - 📄 Check: [Implementierungs-Report](../reports/issue-1-migration-report.md) (vollständige Details)
 - 📘 Check: [Feature Workflow](feature-workflow.md) (Workflow-Fragen)
-- 📖 Check: [Issue Guidelines](issue-guidelines.md) (Best Practices)
+- 📖 Check: [Issue Guidelines](issue-guidelines.md) (Kernkonzepte)
+- 📝 Check: [Acceptance Criteria](issue-acceptance-criteria.md) (AC-Framework)
+- 📚 Check: [Issue Examples](issue-examples.md) (Templates)
 
 **Feedback/Improvements:**
 - Öffne Issue mit Label `meta` oder `documentation`

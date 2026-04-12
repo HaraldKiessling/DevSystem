@@ -1,26 +1,317 @@
 # DevSystem - Project Rules
 
-## System- und Projektanforderungen
-1. Infrastruktur & Zielsystem
-Host: Ubuntu VPS bei IONOS.
-Netzwerkzugang: Initialer Root-Zugriff per SSH erfolgt ausschließlich über Tailscale.
-Kernkomponenten:
-Tailscale: Für VPN und Netzwerksicherheit.
-Caddy: Als Reverse Proxy (SSL/HTTPS).
-code-server: Als Web-IDE für die Steuerung per Handy und Multi-Agent-Nutzung.
-2. Projektmanagement & To-Do-Liste
-Zentrale Steuerung: Alle Aufgaben, Ausbaustufen und Abhängigkeiten werden in einer zentralen To-Do-Liste (z. B. todo.md) gepflegt.
-Rekursive Aufteilung: Zu große Aufgaben müssen zwingend aufgeteilt werden. Sind die Teilaufgaben noch immer zu groß, werden sie weiter unterteilt, bis sie granular abarbeitbar sind.
-Status-Tracking: Jede Aufgabe durchläuft strikt folgende Phasen, die in der Liste sichtbar sein müssen: plan -> Konzeption -> Entwicklung -> qs -> e2e -> fertig.
-Offene Fragen (Entscheidungsmatrix): Unklare Punkte werden in der To-Do-Liste mit Alternativen und einer klaren Empfehlung dokumentiert. Der Benutzer trifft die Entscheidung per Chat oder durch direkte Anpassung der Datei.
-3. Entwicklungs- und Test-Workflow
-Iterativer Ansatz: Fokus liegt auf der schnellstmöglichen Erreichung eines MVP (Minimum Viable Product).
-Live E2E-Tests: Es gibt ein Testkonzept mit E2E-Tests, die live gegen den Ubuntu VPS ausgeführt werden.
-Log-Validierung: Alle Tests müssen explizit auf korrekte Log-Ausgaben der jeweiligen Dienste prüfen.
-Git-Regeln:
-Konzept-Ergebnisse werden direkt in den main-Branch committet.
-Feature-Entwicklungen finden zwingend auf separaten Feature-Branches statt.
-Ein Merge in den main-Branch erfolgt ausschließlich nach einem nachweislich erfolgreichen E2E-Test.
-4. Globale Systemregel für die KI
-Roo Code muss diese Regeln als Systemanweisungen verinnerlichen und darf sie während des gesamten Projektverlaufs nicht vergessen.
+> **Quick-Reference** für Projektstandards, Workflows und Best Practices. Details in verlinkten Dokumenten.
 
+## 1. Dokumentation im Repository
+
+### Markdown-Standards
+- **UTF-8 Encoding**: Alle Markdown-Dateien
+- **Syntax-Highlighting**: Code-Blöcke mit Sprachbezeichner (```bash, ```yaml, ```typescript)
+- **Relative Pfade**: Verlinkungen immer relativ zur aktuellen Datei (`../operations/file.md`)
+- **Zeilenlänge**: Maximal 120 Zeichen pro Zeile für bessere Lesbarkeit
+
+### Dokumentenstruktur
+- **H1 (`#`)**: Nur ein Mal als Dokumenttitel
+- **H2 (`##`)**: Hauptabschnitte
+- **H3 (`###`)**: Unterabschnitte
+- **Inhaltsverzeichnis**: Bei Dokumenten > 50 Zeilen
+- **Datum**: ISO-Format (YYYY-MM-DD) in Changelog-Einträgen
+
+### Automatische Validierung
+
+Die Dokumentationsregeln werden automatisch überwacht:
+- **Pre-commit Hook:** Lokale Prüfung vor jedem Commit
+- **GitHub Actions:** CI-Pipeline bei jedem PR
+- **Manuelle Prüfung:** `./scripts/docs/validate-docs.sh`
+
+Siehe [`documentation-governance.md`](../operations/documentation-governance.md) für Details.
+
+### Code-Beispiele
+```bash
+# Beispiel-Script-Aufruf mit Kontext
+./scripts/setup-qs-vps.sh
+```
+
+**Best Practice**: Immer Kontext zu Code-Snippets liefern (Was macht es? Wann nutzen?)
+
+## 2. System- und Projektanforderungen
+
+### Infrastruktur & Zielsystem
+- **Host**: Ubuntu VPS bei IONOS
+- **Netzwerkzugang**: Initialer Root-Zugriff per SSH ausschließlich über Tailscale
+- **Kernkomponenten**:
+  - **Tailscale**: VPN und Netzwerksicherheit
+  - **Caddy**: Reverse Proxy (SSL/HTTPS)
+  - **code-server**: Web-IDE für Remote-Entwicklung und Multi-Agent-Nutzung
+
+### System-Architektur
+- Detaillierte Architektur: [`docs/ARCHITECTURE.md`](../ARCHITECTURE.md)
+- Tailscale-Konzept: [`docs/concepts/tailscale-konzept.md`](../concepts/tailscale-konzept.md)
+- Caddy-Konzept: [`docs/concepts/caddy-konzept.md`](../concepts/caddy-konzept.md)
+- code-server-Konzept: [`docs/concepts/code-server-konzept.md`](../concepts/code-server-konzept.md)
+
+## 3. Projektmanagement & GitHub Issues
+
+### Feature-basierter Workflow
+- **Zentrale Steuerung**: Alle Features, Bugs und Tasks über GitHub Issues und GitHub Projects
+- **Issue-Templates**: Standardisierte Templates für Konsistenz
+- **Bewertungskriterien**:
+  - **Value**: Business-Value (1-10, höher = wichtiger)
+  - **Effort**: Aufwand in Story Points (1-10, höher = mehr Aufwand)
+  - **Ratio**: Value/Effort (höher = höhere Priorität)
+
+### Issue-Lifecycle
+```
+Icebox → Backlog → Next → In Progress → Done
+```
+
+- **Icebox**: Ideen ohne sofortige Priorität
+- **Backlog**: Validierte Features, noch nicht geplant
+- **Next**: Geplant für nächste Iteration
+- **In Progress**: Aktiv in Entwicklung
+- **Done**: Abgeschlossen und verifiziert
+
+### Milestone-Management
+- **Sprint-basiert**: 2-4 Wochen pro Milestone
+- **Clear Goals**: Jeder Milestone hat klar definierte Ziele
+- **Retrospektive**: Nach jedem Milestone dokumentieren (siehe [`docs/archive/retrospectives/`](../archive/retrospectives/))
+
+### Labels & Bedeutung
+- `type:feature` - Neue Funktionalität
+- `type:bug` - Fehlerbehebung
+- `type:docs` - Dokumentationsänderung
+- `priority:high` - Hohe Priorität
+- `priority:low` - Niedrige Priorität
+- `status:blocked` - Blockiert durch Abhängigkeiten
+
+**Details**: [`docs/operations/issue-guidelines.md`](../operations/issue-guidelines.md), [`docs/operations/issue-acceptance-criteria.md`](../operations/issue-acceptance-criteria.md), [`docs/operations/issue-examples.md`](../operations/issue-examples.md)
+
+### Value/Effort-Ratio Beispiel
+```
+Feature: "API Rate Limiting implementieren"
+Value: 8 (Security wichtig)
+Effort: 4 (Moderate Implementierung)
+Ratio: 8/4 = 2.0 (Gute Priorität)
+
+Feature: "Dashboard UI polieren"
+Value: 3 (Nice-to-have)
+Effort: 6 (Aufwändiges Redesign)
+Ratio: 3/6 = 0.5 (Niedrige Priorität)
+```
+
+## 4. Entwicklungs- und Test-Workflow
+
+### Iterativer Ansatz
+- **MVP-Fokus**: Schnellstmögliche Erreichung eines Minimum Viable Product
+- **Inkrementell**: Kleine, testbare Änderungen bevorzugen
+- **Feedback-Loop**: Schnelle Validierung durch Tests
+
+### Testing-Strategie
+1. **Unit-Tests**: Module und Funktionen isoliert testen
+2. **Integration-Tests**: Komponenten-Interaktion validieren
+3. **E2E-Tests**: Live gegen Ubuntu VPS (siehe [`docs/concepts/testkonzept.md`](../concepts/testkonzept.md))
+4. **Log-Validierung**: Alle Tests müssen Log-Ausgaben prüfen (kritisch!)
+
+### Git-Workflow
+- **Konzept-Commits**: Direkt in `main` (nur Dokumentation/Planung)
+- **Feature-Entwicklung**: Zwingend auf separaten Feature-Branches
+- **Branch-Naming**: `feature/<issue-number>-<short-description>` (z.B. `feature/42-api-rate-limiting`)
+- **Merge-Policy**: Nur nach erfolgreichem E2E-Test in `main` mergen
+
+**Details**: [`docs/operations/git-workflow.md`](../operations/git-workflow.md), [`docs/strategies/branch-strategie.md`](../strategies/branch-strategie.md)
+
+### Code-Review-Prozess
+1. **Self-Review**: Eigenen Code vor PR prüfen
+2. **PR erstellen**: Klare Beschreibung mit Issue-Referenz
+3. **Automatische Checks**: CI/CD-Pipeline muss grün sein
+4. **Peer-Review**: Optional bei komplexen Änderungen
+5. **Merge**: Nach Approval und Tests
+
+### Deployment-Checkliste
+- [ ] Alle Tests erfolgreich
+- [ ] Dokumentation aktualisiert
+- [ ] CHANGELOG.md ergänzt
+- [ ] Breaking Changes kommuniziert
+- [ ] Rollback-Plan vorhanden
+
+## 5. Richtlinien für Implementierung
+
+### Security-Best-Practices
+- **Secrets**: Niemals in Git committen
+- **Environment Variables**: Für sensible Daten nutzen
+- **SSH-Keys**: Nur über Tailscale-Netzwerk
+- **HTTPS**: Obligatorisch für alle Web-Dienste (Caddy)
+
+### Performance-Überlegungen
+- **Idempotenz**: Scripts müssen mehrfach ausführbar sein
+- **Ressourcen**: Memory/CPU-Limits beachten (VPS-Kontext)
+- **Caching**: Wo sinnvoll implementieren
+- **Monitoring**: Log-Ausgaben für Debugging
+
+### Code-Qualität
+- **Self-Documenting**: Code sollte sich selbst erklären
+- **Comments**: Nur für komplexe Logik oder "Warum"-Erklärungen
+- **Bash-Scripts**: ShellCheck-konform
+- **Error-Handling**: Immer Exit-Codes prüfen
+
+## 6. Systemarchitektur & Roo
+
+### Globale Systemregel
+**Roo Code muss diese Regeln als Systemanweisungen verinnerlichen und während des gesamten Projektverlaufs beachten.**
+
+### Roo-Mode-Nutzung
+
+**Code-Mode** (`💻`):
+- Feature-Implementierung
+- Bug-Fixes
+- Script-Erstellung
+- Refactoring
+
+**Architect-Mode** (`🏗️`):
+- System-Design
+- Konzept-Erstellung
+- Architektur-Entscheidungen
+- Dokumentations-Planung
+
+**Debug-Mode** (`🪲`):
+- Fehleranalyse
+- Log-Auswertung
+- Troubleshooting
+- Root-Cause-Analyse
+
+**Orchestrator-Mode** (`🪃`):
+- Multi-Step-Workflows
+- Komplexe Tasks koordinieren
+- Cross-Domain-Aufgaben
+- Projekt-Management
+
+### Best Practices für Roo
+1. **Modus wählen**: Passenden Modus für Task-Typ verwenden
+2. **Context beachten**: Bestehende Dokumentation/Code analysieren
+3. **Inkrementell arbeiten**: Kleine, verifizierbare Schritte
+4. **Dokumentieren**: Änderungen immer in DOCUMENTATION-CHANGELOG.md festhalten
+
+### Roo-Rules-Referenz
+Detaillierte Roo-Konfiguration: [`.Roo/roo-rules.md`](../../.Roo/roo-rules.md)
+
+## 7. Definition of Done (DoD)
+
+### Generische DoD (alle Tasks)
+- [ ] Funktionalität implementiert und getestet
+- [ ] Code entspricht Projekt-Standards
+- [ ] Dokumentation aktualisiert
+- [ ] Tests erfolgreich (lokal und CI/CD)
+- [ ] Issue referenziert in Commits/PR
+- [ ] Peer-Review durchgeführt (wenn nötig)
+- [ ] In `main` gemerged
+
+### Feature-spezifische DoD
+**Feature-Entwicklung**:
+- [ ] E2E-Tests gegen VPS erfolgreich
+- [ ] CHANGELOG.md ergänzt
+- [ ] User-Dokumentation erstellt
+
+**Bug-Fix**:
+- [ ] Root-Cause identifiziert und dokumentiert
+- [ ] Regression-Test hinzugefügt
+- [ ] Fix verifiziert in Produktions-ähnlicher Umgebung
+
+**Dokumentation**:
+- [ ] Markdown-Linting erfolgreich
+- [ ] Links validiert
+- [ ] DOCUMENTATION-CHANGELOG.md aktualisiert
+
+**Details**: [`docs/operations/git-workflow.md`](../operations/git-workflow.md) (Abschnitt "Definition of Done")
+
+## 8. Kommunikationsrichtlinien
+
+### Commit-Message-Konventionen
+Format: `<type>(<scope>): <subject>`
+
+**Typen**:
+- `feat`: Neue Funktionalität
+- `fix`: Fehlerbehebung
+- `docs`: Dokumentation
+- `refactor`: Code-Umstrukturierung
+- `test`: Test-Ergänzung
+- `chore`: Wartungsarbeiten
+
+**Beispiel**:
+```
+feat(caddy): Add rate limiting for API endpoints (#42)
+```
+
+### PR-Beschreibungen
+```markdown
+## Beschreibung
+Kurze Zusammenfassung der Änderungen
+
+## Issue
+Closes #42
+
+## Änderungen
+- Datei X modifiziert
+- Feature Y hinzugefügt
+
+## Tests
+- Unit-Tests: ✅
+- E2E-Tests: ✅
+```
+
+### Issue-Kommentare
+- **Updates**: Status-Änderungen dokumentieren
+- **Blockers**: Explizit erwähnen mit @mention
+- **Lösungen**: Technische Details für andere teilen
+
+### Code-Dokumentation
+- **Functions**: Docstring mit Parameter/Return-Beschreibung
+- **Scripts**: Header-Kommentar mit Usage-Beispiel
+- **Complex Logic**: Inline-Kommentare für "Warum", nicht "Was"
+
+## 9. Troubleshooting & Support
+
+### Hilfe finden
+1. **Dokumentation**: Start bei [`docs/README.md`](../README.md)
+2. **Troubleshooting-Guide**: [`docs/TROUBLESHOOTING.md`](../TROUBLESHOOTING.md)
+3. **Archive**: Gelöste Probleme in [`docs/archive/troubleshooting/`](../archive/troubleshooting/)
+4. **GitHub Issues**: Suche nach ähnlichen Problemen
+
+### Debugging-Workflow
+1. **Symptom dokumentieren**: Was ist das Problem?
+2. **Logs sammeln**: Relevante Log-Ausgaben erfassen
+3. **Kontext prüfen**: Was hat sich geändert?
+4. **Hypothese**: Vermutete Ursache formulieren
+5. **Testen**: Hypothese verifizieren/falsifizieren
+6. **Fix implementieren**: Lösung umsetzen
+7. **Verifizieren**: Problem als gelöst bestätigen
+8. **Dokumentieren**: In Troubleshooting-Guide aufnehmen
+
+### Eskalationspfad
+1. **Self-Service**: Dokumentation und Archive durchsuchen
+2. **Issue erstellen**: Bei neuen Problemen GitHub Issue öffnen
+3. **Debug-Mode**: Roo im Debug-Mode für Analyse nutzen
+4. **Dokumentieren**: Lösung für zukünftige Referenz festhalten
+
+## 10. Wichtige Querverweise
+
+### Operations & Workflows
+- [`feature-workflow.md`](../operations/feature-workflow.md) - Feature-Entwicklung Schritt-für-Schritt
+- [`issue-guidelines.md`](../operations/issue-guidelines.md) - Issue-Erstellung Standards
+- [`git-workflow.md`](../operations/git-workflow.md) - Git-Branching und Commits
+- [`documentation-governance.md`](../operations/documentation-governance.md) - Dokumentations-Standards
+
+### Strategien & Konzepte
+- [`branch-strategie.md`](../strategies/branch-strategie.md) - Branch-Management Details
+- [`deployment-prozess.md`](../strategies/deployment-prozess.md) - Deployment-Strategie
+- [`VISION.md`](VISION.md) - Projekt-Vision und Ziele
+
+### Architektur & Konzepte
+- [`ARCHITECTURE.md`](../ARCHITECTURE.md) - System-Architektur Übersicht
+- [`testkonzept.md`](../concepts/testkonzept.md) - Testing-Strategie
+- [`sicherheitskonzept.md`](../concepts/sicherheitskonzept.md) - Security-Architektur
+
+---
+
+**Version**: 2.0 (150+ Zeilen)  
+**Letzte Aktualisierung**: 2026-04-12  
+**Maintainer**: DevSystem Team via Roo

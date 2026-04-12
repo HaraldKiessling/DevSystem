@@ -14,7 +14,7 @@ Siehe [`project/`](project/) für Projekt-Planung und -Management:
 
 - **[VISION.md](project/VISION.md)** - Projekt-Vision, fachliche Anforderungen und Tech-Stack
 - **[PROJECT-RULES.md](project/PROJECT-RULES.md)** - Projekt-Regeln, Workflows und Anforderungen
-- **[todo.md](project/todo.md)** - Zentrale Aufgabenliste (wird zu GitHub Issues migriert)
+- **[GitHub Issues](https://github.com/HaraldKiessling/DevSystem/issues)** - Zentrale Aufgabenverwaltung und Task Management
 
 ### 🔧 Support & Troubleshooting
 
@@ -39,16 +39,19 @@ Praktische Deployment-Anleitungen:
 - [`vps-ssh-fix-guide.md`](deployment/vps-ssh-fix-guide.md) - SSH-Troubleshooting
 
 ### ⚙️ Operations
-Betrieb, Wartung und Workflows:
-- [`git-workflow.md`](operations/git-workflow.md) - Git-Best-Practices
-- [`branch-strategie.md`](operations/branch-strategie.md) - Branch-Management
-- [`qs-github-integration-strategie.md`](operations/qs-github-integration-strategie.md) - QS-GitHub-Automation
+Betrieb, Wartung und tägliche Workflows:
+- [`git-workflow.md`](operations/git-workflow.md) - Operative Git-Workflows, DoD-Checklisten, tägliche Git-Operationen
+- [`feature-workflow.md`](operations/feature-workflow.md) - Feature-Development-Prozess
+- [`documentation-governance.md`](operations/documentation-governance.md) - Dokumentations-Standards
+- [`git-hooks-setup.md`](operations/git-hooks-setup.md) - Git-Hooks-Installation
 
 ### 📊 Strategien
-Strategische Planung und Lessons Learned:
+Strategische Architektur und langfristige Entscheidungen:
+- [`branch-strategie.md`](strategies/branch-strategie.md) - Branch-Modell, Versionierung, Release-Strategie (Warum & Architektur)
+- [`deployment-prozess.md`](strategies/deployment-prozess.md) - Deployment-Strategie
 - [`qs-implementierungsplan-final.md`](strategies/qs-implementierungsplan-final.md) - QS-System Implementierung
 - [`qs-strategy-summary.md`](strategies/qs-strategy-summary.md) - QS-Strategie Executive Summary
-- [`roo-rules-improvements.md`](strategies/roo-rules-improvements.md) - Lessons Learned
+- [`qs-github-integration-strategie.md`](strategies/qs-github-integration-strategie.md) - QS-GitHub-Automation-Strategie
 
 ### 📈 Reports
 Aktive Status-Reports und Optimierungen:
@@ -96,7 +99,7 @@ Dokumentations-Updates werden in [`DOCUMENTATION-CHANGELOG.md`](DOCUMENTATION-CH
 ## 🔗 Weitere Ressourcen
 
 - [`CHANGELOG.md`](../CHANGELOG.md) - Projekt-Changelog (Phase 4)
-- [`todo.md`](project/todo.md) - Aktive Tasks
+- [GitHub Issues](https://github.com/HaraldKiessling/DevSystem/issues) - Aktive Tasks
 - [`DOCUMENTATION-CHANGELOG.md`](DOCUMENTATION-CHANGELOG.md) - Dokumentations-Historie
 
 ## 📅 Letzte Aktualisierung

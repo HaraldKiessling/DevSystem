@@ -33,11 +33,11 @@ Die vollständige QS-Strategie mit idempotenten Scripts und GitHub-Integration i
 - Akzeptanzkriterien pro Phase
 - Success Metrics & Test-Szenarien
 
-### 3. Todo-Liste aktualisiert
-**Datei:** [`../../todo.md`](../../todo.md)
+### 3. GitHub Issues aktualisiert
+**Platform:** [GitHub Issues](https://github.com/HaraldKiessling/DevSystem/issues)
 
 **Neue Sektion:** "QS-GitHub-Integration (Post-MVP)"
-- 5 Phasen als actionable Tasks
+- 5 Phasen als actionable Issues
 - Priorisierung: HOCH
 - Verlinkung zu Planungsdokumenten
 

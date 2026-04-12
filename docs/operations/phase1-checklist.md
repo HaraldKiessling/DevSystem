@@ -389,7 +389,9 @@ Phase 1 ist abgeschlossen, wenn:
 - [`github-projects-setup.md`](github-projects-setup.md) - Detaillierte Board-Setup-Anleitung
 - [`feature-issues-batch-1.md`](feature-issues-batch-1.md) - Alle 15 Feature-Issues
 - [Feature Workflow Guide](feature-workflow.md) - Workflow nach Board-Setup
-- [Issue Guidelines](issue-guidelines.md) - Issue-Best-Practices
+- [Issue Guidelines](issue-guidelines.md) - Kernkonzepte & Prozesse
+- [Acceptance Criteria](issue-acceptance-criteria.md) - AC-Framework
+- [Issue Examples](issue-examples.md) - Templates & Beispiele
 
 **GitHub Dokumentation:**
 - [GitHub Projects](https://docs.github.com/en/issues/planning-and-tracking-with-projects)

@@ -1,876 +1,472 @@
-# Branch-Strategie für die Feature-Entwicklung im DevSystem-Projekt
+# Branch-Strategie für das DevSystem-Projekt
 
-Dieses Dokument beschreibt die detaillierte Branch-Strategie für die Feature-Entwicklung im DevSystem-Projekt. Es baut auf dem bestehenden [Git-Workflow](../git-workflow.md) auf und erweitert diesen um spezifische Details zur Branch-Strategie.
+Dieses Dokument beschreibt die **strategische Branch-Architektur** und die langfristigen Entscheidungen für das DevSystem-Projekt. Es erklärt das "Warum" hinter unserem Branch-Modell, definiert Konventionen und beschreibt Release-Prozesse.
+
+> **Hinweis:** Für tägliche operative Git-Workflows, Checklisten und praktische Beispiele siehe [Git-Workflow](../operations/git-workflow.md).
+
+## 📚 Related Documentation
+- **[Git-Workflow](../operations/git-workflow.md)** - Tägliche Git-Operationen, DoD-Checklisten, Merge-Prozess
+- **[Deployment-Prozess](deployment-prozess.md)** - Deployment-Strategie und Release-Management
+- **[Feature-Workflow](../operations/feature-workflow.md)** - Detaillierter Feature-Development-Workflow
+
+---
 
 ## Inhaltsverzeichnis
 
-1. [Branch-Typen](#1-branch-typen)
-   - [Definition der Branch-Typen](#11-definition-der-branch-typen)
-   - [Namenskonventionen](#12-namenskonventionen)
-   - [Lebenszyklus der Branches](#13-lebenszyklus-der-branches)
-2. [Workflow für Feature-Entwicklung](#2-workflow-für-feature-entwicklung)
-   - [Erstellung eines Feature-Branches](#21-erstellung-eines-feature-branches)
-   - [Entwicklung und Commits](#22-entwicklung-und-commits)
-   - [Code-Review-Prozess](#23-code-review-prozess)
-   - [Merge in den main-Branch](#24-merge-in-den-main-branch)
-3. [Qualitätssicherung](#3-qualitätssicherung)
-   - [Tests vor dem Merge](#31-tests-vor-dem-merge)
-   - [Code-Qualitätsstandards](#32-code-qualitätsstandards)
-   - [Dokumentationsanforderungen](#33-dokumentationsanforderungen)
-4. [Versionierung](#4-versionierung)
-   - [Versionierungsschema](#41-versionierungsschema)
-   - [Release-Prozess](#42-release-prozess)
-   - [Tagging-Strategie](#43-tagging-strategie)
-5. [Konfliktlösung](#5-konfliktlösung)
-   - [Vermeidung von Merge-Konflikten](#51-vermeidung-von-merge-konflikten)
-   - [Prozess zur Lösung von Konflikten](#52-prozess-zur-lösung-von-konflikten)
-   - [Kommunikation bei Konflikten](#53-kommunikation-bei-konflikten)
-6. [Tooling und Automatisierung](#6-tooling-und-automatisierung)
-   - [Git-Hooks für Qualitätssicherung](#61-git-hooks-für-qualitätssicherung)
-   - [CI/CD-Integration](#62-cicd-integration)
-   - [Automatisierte Tests](#63-automatisierte-tests)
-
-## 1. Branch-Typen
+1. [Branch-Modell & Rationale](#1-branch-modell--rationale)
+2. [Branch-Typen & Namenskonventionen](#2-branch-typen--namenskonventionen)
+3. [Lebenszyklus der Branches](#3-lebenszyklus-der-branches)
+4. [Versionierung & Release-Strategie](#4-versionierung--release-strategie)
+5. [Qualitätssicherungs-Strategie](#5-qualitätssicherungs-strategie)
+6. [Konfliktlösung & Prävention](#6-konfliktlösung--prävention)
+7. [Tooling & Automatisierung](#7-tooling--automatisierung)
+8. [Skalierung & Team-Wachstum](#8-skalierung--team-wachstum)
+9. [Alternativen & Trade-offs](#9-alternativen--trade-offs)
 
-### 1.1 Definition der Branch-Typen
+---
 
-Das DevSystem-Projekt verwendet folgende Branch-Typen:
+## 1. Branch-Modell & Rationale
 
-- **main**: Der Hauptbranch enthält die stabile Produktionsversion des Projekts. Dieser Branch sollte immer in einem funktionsfähigen Zustand sein und dient als Basis für Deployments.
-
-- **feature**: Feature-Branches werden für die Entwicklung neuer Funktionen und Komponenten verwendet. Sie werden vom main-Branch abgezweigt und nach Fertigstellung wieder in diesen zurückgeführt.
+### 1.1 Warum ein main-basiertes Modell?
 
-- **hotfix**: Hotfix-Branches werden für dringende Fehlerbehebungen in der Produktionsversion verwendet. Sie werden vom main-Branch abgezweigt und nach Fertigstellung wieder in diesen zurückgeführt.
-
-- **release**: Release-Branches werden für die Vorbereitung einer neuen Produktionsversion verwendet. Sie ermöglichen letzte Anpassungen und Bugfixes vor dem Release.
-
-- **develop** (optional): In größeren Teams kann ein develop-Branch als Integrationsebene zwischen feature-Branches und dem main-Branch dienen. Feature-Branches werden zunächst in den develop-Branch gemergt, bevor dieser in den main-Branch überführt wird.
-
-### 1.2 Namenskonventionen
-
-Für eine klare und konsistente Benennung der Branches gelten folgende Konventionen:
-
-- **main**: Immer `main` (keine Variationen)
-
-- **feature**: `feature/<komponente>-<beschreibung>`
-  - Beispiele:
-    - `feature/tailscale-setup`
-    - `feature/caddy-config`
-    - `feature/code-server-installation`
-    - `feature/ollama-integration`
-
-- **hotfix**: `hotfix/<komponente>-<beschreibung>`
-  - Beispiele:
-    - `hotfix/tailscale-connection-issue`
-    - `hotfix/caddy-ssl-fix`
-
-- **release**: `release/v<major>.<minor>.<patch>`
-  - Beispiele:
-    - `release/v1.0.0`
-    - `release/v1.1.0`
-
-- **develop**: Immer `develop` (falls verwendet)
-
-Die Beschreibung sollte kurz und prägnant sein, in Kebab-Case (mit Bindestrichen zwischen Wörtern) und nur Kleinbuchstaben enthalten. Sie sollte den Zweck des Branches klar kommunizieren.
-
-### 1.3 Lebenszyklus der Branches
-
-Jeder Branch-Typ hat einen definierten Lebenszyklus:
-
-#### main-Branch
-- **Erstellung**: Zu Beginn des Projekts
-- **Lebensdauer**: Permanent
-- **Löschung**: Nie
-
-#### feature-Branch
-- **Erstellung**: Bei Beginn der Entwicklung einer neuen Funktion
-- **Lebensdauer**: Bis die Funktion vollständig implementiert, getestet und in den main-Branch gemergt wurde
-- **Löschung**: Nach erfolgreichem Merge in den main-Branch
-
-#### hotfix-Branch
-- **Erstellung**: Bei Entdeckung eines kritischen Fehlers in der Produktionsversion
-- **Lebensdauer**: Bis der Fehler behoben, getestet und in den main-Branch gemergt wurde
-- **Löschung**: Nach erfolgreichem Merge in den main-Branch
-
-#### release-Branch
-- **Erstellung**: Bei Vorbereitung einer neuen Produktionsversion
-- **Lebensdauer**: Bis die Version finalisiert und in den main-Branch gemergt wurde
-- **Löschung**: Nach erfolgreichem Merge in den main-Branch und Tagging
-
-#### develop-Branch (optional)
-- **Erstellung**: Zu Beginn des Projekts (falls verwendet)
-- **Lebensdauer**: Permanent
-- **Löschung**: Nie
-
-## 2. Workflow für Feature-Entwicklung
-
-### 2.1 Erstellung eines Feature-Branches
-
-Der Prozess zur Erstellung eines Feature-Branches umfasst folgende Schritte:
-
-1. **Aktualisierung des lokalen main-Branches**:
-   ```bash
-   git checkout main
-   git pull origin main
-   ```
-
-2. **Erstellung des Feature-Branches**:
-   ```bash
-   git checkout -b feature/komponente-beschreibung
-   ```
-
-3. **Push des initialen Feature-Branches** (optional, für Sichtbarkeit im Team):
-   ```bash
-   git push -u origin feature/komponente-beschreibung
-   ```
-
-4. **Aktualisierung der todo.md**:
-   - Markieren der entsprechenden Aufgabe als "Entwicklung"
-   - Hinzufügen eines Verweises auf den Feature-Branch
-
-### 2.2 Entwicklung und Commits
-
-Während der Entwicklung im Feature-Branch gelten folgende Richtlinien:
-
-1. **Regelmäßige Commits**:
-   - Commits sollten logisch zusammenhängende Änderungen enthalten
-   - Jeder Commit sollte eine klare, aussagekräftige Commit-Nachricht haben
-   - Format: `<typ>: <kurze beschreibung>`
-   - Beispiel: `feat: Tailscale-Installation und Konfiguration hinzugefügt`
-
-2. **Commit-Typen**:
-   - `feat`: Neue Funktionalität
-   - `fix`: Fehlerbehebung
-   - `docs`: Dokumentationsänderungen
-   - `test`: Hinzufügen oder Ändern von Tests
-   - `config`: Konfigurationsänderungen
-   - `refactor`: Code-Refactoring ohne Funktionsänderung
-
-3. **Regelmäßige Synchronisation mit dem main-Branch**:
-   ```bash
-   git checkout feature/komponente-beschreibung
-   git fetch origin
-   git merge origin/main
-   ```
-   oder
-   ```bash
-   git rebase origin/main
-   ```
-
-4. **Push der Änderungen**:
-   ```bash
-   git push origin feature/komponente-beschreibung
-   ```
-
-5. **Dokumentation der Änderungen**:
-   - Aktualisierung der relevanten Dokumentation
-   - Hinzufügen von Kommentaren zu komplexem Code
-   - Aktualisierung der todo.md mit dem Fortschritt
-
-### 2.3 Code-Review-Prozess
-
-Der Code-Review-Prozess für Feature-Branches umfasst folgende Schritte:
-
-1. **Vorbereitung für den Review**:
-   - Sicherstellen, dass alle Tests erfolgreich durchlaufen
-   - Überprüfen der Code-Qualität und Einhaltung der Standards
-   - Aktualisieren der Dokumentation
-
-2. **Erstellung eines Pull Requests**:
-   - Titel: Kurze Beschreibung der Funktion
-   - Beschreibung:
-     - Detaillierte Beschreibung der implementierten Funktion
-     - Referenz zur entsprechenden Aufgabe in der todo.md
-     - Checkliste der durchgeführten Tests
-     - Screenshots oder Demos (falls relevant)
-
-3. **Review-Prozess**:
-   - Mindestens ein Teammitglied sollte den Code reviewen
-   - Reviewer prüfen:
-     - Funktionalität
-     - Code-Qualität
-     - Einhaltung der Projektstandards
-     - Vollständigkeit der Tests
-     - Vollständigkeit der Dokumentation
-   - Feedback wird als Kommentare im Pull Request gegeben
-
-4. **Adressierung von Feedback**:
-   - Entwickler bearbeitet das Feedback und pusht weitere Commits
-   - Jeder Feedback-Punkt sollte explizit adressiert werden
-   - Nach Abschluss der Änderungen wird der Reviewer informiert
-
-5. **Abschluss des Reviews**:
-   - Reviewer genehmigen den Pull Request
-   - Bei Bedarf können mehrere Review-Runden durchgeführt werden
-
-### 2.4 Merge in den main-Branch
-
-Der Merge-Prozess in den main-Branch umfasst folgende Schritte:
-
-1. **Voraussetzungen für den Merge**:
-   - Alle E2E-Tests wurden erfolgreich durchgeführt
-   - Die Log-Validierung wurde durchgeführt und zeigt keine Fehler
-   - Der Code wurde reviewt und genehmigt
-   - Die Dokumentation wurde aktualisiert
-
-2. **Merge-Optionen**:
-   - **Squash-Merge**: Alle Commits des Feature-Branches werden zu einem einzigen Commit zusammengefasst
-     ```bash
-     git checkout main
-     git merge --squash feature/komponente-beschreibung
-     git commit -m "feat: Komponente XYZ implementiert"
-     ```
-   - **Merge-Commit**: Erhält die vollständige Commit-Historie des Feature-Branches
-     ```bash
-     git checkout main
-     git merge --no-ff feature/komponente-beschreibung
-     ```
-
-3. **Push des main-Branches**:
-   ```bash
-   git push origin main
-   ```
-
-4. **Löschung des Feature-Branches**:
-   ```bash
-   git branch -d feature/komponente-beschreibung
-   git push origin --delete feature/komponente-beschreibung
-   ```
-
-5. **Aktualisierung der todo.md**:
-   - Markieren der entsprechenden Aufgabe als "fertig"
-   - Hinzufügen eines Verweises auf den Merge-Commit
-
-## 3. Qualitätssicherung
-
-### 3.1 Tests vor dem Merge
-
-Vor einem Merge in den main-Branch müssen folgende Tests erfolgreich durchgeführt werden:
-
-1. **E2E-Tests**:
-   - Live-Tests gegen den Ubuntu VPS
-   - Überprüfung der Funktionalität der implementierten Features
-   - Validierung der Benutzerinteraktion
-   - Beispiel für Tailscale:
-     ```bash
-     # Verbindungstest
-     tailscale ping devsystem-vps.ts.net
-     
-     # Zugriff auf Dienste über Tailscale
-     curl -I https://code.devsystem.internal
-     ```
-
-2. **Integrationstests**:
-   - Tests der Interaktion zwischen verschiedenen Komponenten
-   - Überprüfung der Kompatibilität mit bestehenden Systemen
-   - Beispiel für Caddy und code-server:
-     ```bash
-     # Test der Reverse-Proxy-Konfiguration
-     curl -I https://code.devsystem.internal
-     
-     # Test der WebSocket-Verbindung
-     # (Manueller Test über Browser-Verbindung)
-     ```
-
-3. **Sicherheitstests**:
-   - Überprüfung auf potenzielle Sicherheitslücken
-   - Validierung der Zugriffskontrollen
-   - Beispiel für Tailscale-Sicherheit:
-     ```bash
-     # Test des Zugriffs ohne Tailscale-Verbindung (sollte fehlschlagen)
-     curl -I http://public-ip:8080
-     ```
-
-4. **Log-Validierung**:
-   - Überprüfung der Log-Einträge auf Fehler und Warnungen
-   - Validierung der korrekten Protokollierung von Ereignissen
-   - Beispiel:
-     ```bash
-     # Überprüfung der Caddy-Logs
-     sudo journalctl -u caddy | grep -i error
-     
-     # Überprüfung der code-server-Logs
-     sudo journalctl -u code-server@$USER | grep -i error
-     ```
-
-### 3.2 Code-Qualitätsstandards
-
-Für das DevSystem-Projekt gelten folgende Code-Qualitätsstandards:
-
-1. **Allgemeine Standards**:
-   - Konsistente Einrückung und Formatierung
-   - Aussagekräftige Variablen- und Funktionsnamen
-   - Vermeidung von dupliziertem Code
-   - Einhaltung des DRY-Prinzips (Don't Repeat Yourself)
-
-2. **Shell-Skripte**:
-   - Verwendung von ShellCheck zur Validierung
-   - Fehlerbehandlung mit `set -e` und `trap`
-   - Dokumentation aller Parameter und Rückgabewerte
-   - Beispiel:
-     ```bash
-     #!/bin/bash
-     set -e
-     
-     # Funktion zur Installation von Tailscale
-     # $1: Version (optional)
-     install_tailscale() {
-       local version=${1:-latest}
-       echo "Installing Tailscale version: $version"
-       # Installation code
-     }
-     
-     # Hauptfunktion
-     main() {
-       install_tailscale "$@"
-     }
-     
-     main "$@"
-     ```
-
-3. **Konfigurationsdateien**:
-   - Konsistente Struktur und Formatierung
-   - Ausführliche Kommentierung
-   - Vermeidung von hartcodierten Werten
-   - Beispiel für Caddy-Konfiguration:
-     ```
-     # Globale Variablen
-     {
-       email admin@example.com
-       # Weitere globale Einstellungen
-     }
-     
-     # code-server Konfiguration
-     code.devsystem.internal {
-       # Reverse Proxy zu code-server
-       reverse_proxy localhost:8080
-       # Weitere Einstellungen
-     }
-     ```
-
-4. **Dokumentation im Code**:
-   - Jede Funktion sollte dokumentiert sein
-   - Komplexe Logik sollte erklärt werden
-   - Bekannte Einschränkungen sollten dokumentiert werden
-
-### 3.3 Dokumentationsanforderungen
-
-Für jeden Feature-Branch gelten folgende Dokumentationsanforderungen:
-
-1. **Aktualisierung der todo.md**:
-   - Statusänderungen der Aufgaben
-   - Hinzufügen neuer Aufgaben, die während der Entwicklung identifiziert wurden
-   - Dokumentation von Abhängigkeiten zwischen Aufgaben
-
-2. **Aktualisierung von Konzeptdokumenten**:
-   - Anpassung der Konzeptdokumente an die tatsächliche Implementierung
-   - Dokumentation von Designentscheidungen und deren Begründung
-   - Aktualisierung von Diagrammen und Schaubildern
-
-3. **Erstellung oder Aktualisierung von Benutzeranleitungen**:
-   - Schrittweise Anleitungen zur Nutzung der implementierten Funktionen
-   - Screenshots oder Diagramme zur Veranschaulichung
-   - Beispiele für typische Anwendungsfälle
-
-4. **Technische Dokumentation**:
-   - Beschreibung der Architektur und Komponenten
-   - Dokumentation von APIs und Schnittstellen
-   - Erklärung von Konfigurationsoptionen
-
-5. **Changelog-Einträge**:
-   - Beschreibung der Änderungen für das Changelog
-   - Kategorisierung der Änderungen (Feature, Bugfix, etc.)
-   - Referenz zum entsprechenden Issue oder Pull Request
-
-## 4. Versionierung
-
-### 4.1 Versionierungsschema
-
-Das DevSystem-Projekt verwendet Semantic Versioning (SemVer) für die Versionierung:
-
-- **Format**: `v<major>.<minor>.<patch>`
-  - **major**: Inkompatible API-Änderungen
-  - **minor**: Rückwärtskompatible Funktionserweiterungen
-  - **patch**: Rückwärtskompatible Bugfixes
-
-Beispiele:
-- `v1.0.0`: Erste stabile Version
-- `v1.1.0`: Hinzufügen einer neuen Komponente oder Funktion
-- `v1.1.1`: Bugfix für eine bestehende Funktion
-
-Zusätzlich können Pre-Release-Bezeichner verwendet werden:
-- `v1.0.0-alpha.1`: Alpha-Version
-- `v1.0.0-beta.1`: Beta-Version
-- `v1.0.0-rc.1`: Release Candidate
-
-### 4.2 Release-Prozess
-
-Der Release-Prozess umfasst folgende Schritte:
-
-1. **Vorbereitung des Releases**:
-   - Erstellung eines release-Branches vom main-Branch
-     ```bash
-     git checkout main
-     git pull origin main
-     git checkout -b release/v1.0.0
-     ```
-   - Aktualisierung der Versionsnummer in relevanten Dateien
-   - Aktualisierung des Changelogs
-
-2. **Qualitätssicherung**:
-   - Durchführung aller Tests
-   - Überprüfung der Dokumentation
-   - Validierung der Installationsanleitung
-
-3. **Finalisierung des Releases**:
-   - Merge des release-Branches in den main-Branch
-     ```bash
-     git checkout main
-     git merge --no-ff release/v1.0.0
-     ```
-   - Erstellung eines Tags für die Version
-     ```bash
-     git tag -a v1.0.0 -m "Release v1.0.0"
-     git push origin v1.0.0
-     ```
-
-4. **Nachbereitung**:
-   - Löschung des release-Branches
-     ```bash
-     git branch -d release/v1.0.0
-     git push origin --delete release/v1.0.0
-     ```
-   - Aktualisierung der Projektdokumentation
-   - Kommunikation des Releases an das Team
-
-### 4.3 Tagging-Strategie
-
-Die Tagging-Strategie für das DevSystem-Projekt umfasst folgende Aspekte:
-
-1. **Annotierte Tags**:
-   - Verwendung von annotierten Tags für Releases
-     ```bash
-     git tag -a v1.0.0 -m "Release v1.0.0"
-     ```
-   - Die Tag-Nachricht sollte eine kurze Zusammenfassung des Releases enthalten
-
-2. **Tagging-Zeitpunkt**:
-   - Tags werden nach dem erfolgreichen Merge in den main-Branch erstellt
-   - Vor dem Tagging sollten alle Tests erfolgreich durchlaufen sein
-
-3. **Tag-Konventionen**:
-   - Release-Tags: `v<major>.<minor>.<patch>`
-   - Pre-Release-Tags: `v<major>.<minor>.<patch>-<pre-release>`
-   - Milestone-Tags: `milestone-<name>`
-
-4. **Verteilung von Tags**:
-   - Tags werden zum Remote-Repository gepusht
-     ```bash
-     git push origin v1.0.0
-     ```
-   - Alle Teammitglieder sollten die Tags pullen
-     ```bash
-     git fetch --tags
-     ```
-
-5. **Dokumentation von Tags**:
-   - Jedes Tag sollte im Changelog dokumentiert sein
-   - Die Tag-Nachricht sollte auf das entsprechende Changelog verweisen
-
-## 5. Konfliktlösung
-
-### 5.1 Vermeidung von Merge-Konflikten
-
-Um Merge-Konflikte zu vermeiden, werden folgende Strategien empfohlen:
-
-1. **Regelmäßige Synchronisation mit dem main-Branch**:
-   - Regelmäßiges Mergen oder Rebasing des main-Branches in den Feature-Branch
-     ```bash
-     git checkout feature/komponente-beschreibung
-     git fetch origin
-     git merge origin/main
-     ```
-     oder
-     ```bash
-     git rebase origin/main
-     ```
-
-2. **Klare Aufgabentrennung**:
-   - Vermeidung von Überschneidungen bei der Arbeit an Dateien
-   - Kommunikation im Team über die bearbeiteten Bereiche
-   - Verwendung von Modulen und Komponenten mit klaren Schnittstellen
-
-3. **Kleine, fokussierte Commits**:
-   - Häufige, kleine Commits statt seltener, großer Commits
-   - Jeder Commit sollte eine logisch zusammenhängende Änderung enthalten
-   - Vermeidung von Änderungen an unrelated Dateien in einem Commit
-
-4. **Strukturierte Dateien**:
-   - Logische Aufteilung von Code in Dateien und Module
-   - Vermeidung von monolithischen Dateien, die von vielen Entwicklern bearbeitet werden
-   - Verwendung von Konfigurationsdateien für umgebungsspezifische Einstellungen
-
-### 5.2 Prozess zur Lösung von Konflikten
-
-Wenn Merge-Konflikte auftreten, wird folgender Prozess zur Lösung empfohlen:
-
-1. **Identifikation der Konflikte**:
-   - Nach einem Merge oder Rebase werden Konflikte angezeigt
-     ```bash
-     git merge origin/main
-     # Konflikte werden angezeigt
-     ```
-
-2. **Analyse der Konflikte**:
-   - Überprüfung der konfliktbehafteten Dateien
-     ```bash
-     git status
-     # Zeigt konfliktbehaftete Dateien an
-     ```
-   - Verständnis der Änderungen in beiden Branches
-     ```bash
-     git diff --ours
-     # Zeigt Änderungen im aktuellen Branch
-     git diff --theirs
-     # Zeigt Änderungen im zu mergenden Branch
-     ```
-
-3. **Lösung der Konflikte**:
-   - Manuelle Bearbeitung der konfliktbehafteten Dateien
-   - Verwendung von Merge-Tools
-     ```bash
-     git mergetool
-     ```
-   - Entscheidung, welche Änderungen beibehalten werden sollen
-
-4. **Abschluss der Konfliktlösung**:
-   - Markieren der Konflikte als gelöst
-     ```bash
-     git add <konfliktdatei>
-     ```
-   - Fortsetzen des Merge- oder Rebase-Prozesses
-     ```bash
-     git merge --continue
-     ```
-     oder
-     ```bash
-     git rebase --continue
-     ```
-
-5. **Validierung nach der Konfliktlösung**:
-   - Durchführung aller Tests
-   - Überprüfung der Funktionalität
-   - Sicherstellen, dass keine Regressionen eingeführt wurden
-
-### 5.3 Kommunikation bei Konflikten
-
-Bei der Lösung von Konflikten ist eine klare Kommunikation im Team entscheidend:
-
-1. **Benachrichtigung des Teams**:
-   - Information über aufgetretene Konflikte
-   - Koordination mit anderen Entwicklern, die an den betroffenen Dateien arbeiten
-
-2. **Dokumentation der Entscheidungen**:
-   - Erklärung, warum bestimmte Änderungen beibehalten wurden
-   - Dokumentation von Kompromissen oder alternativen Lösungen
-
-3. **Review der Konfliktlösung**:
-   - Code-Review der gelösten Konflikte
-   - Sicherstellen, dass die Lösung den Projektstandards entspricht
-
-4. **Lessons Learned**:
-   - Analyse der Ursachen für Konflikte
-   - Anpassung der Entwicklungspraktiken zur Vermeidung ähnlicher Konflikte in der Zukunft
-
-## 6. Tooling und Automatisierung
-
-### 6.1 Git-Hooks für Qualitätssicherung
-
-Git-Hooks können verwendet werden, um die Qualitätssicherung zu automatisieren:
-
-1. **pre-commit-Hook**:
-   - Überprüfung der Code-Formatierung
-   - Linting des Codes
-   - Überprüfung auf sensible Daten
-   - Beispiel für einen pre-commit-Hook:
-     ```bash
-     #!/bin/bash
-     
-     # Überprüfung von Shell-Skripten mit ShellCheck
-     for file in $(git diff --cached --name-only | grep -E '\.sh$'); do
-       if ! shellcheck "$file"; then
-         echo "ShellCheck failed for $file"
-         exit 1
-       fi
-     done
-     
-     # Überprüfung auf sensible Daten
-     if git diff --cached | grep -E '(password|secret|key).*=.*[A-Za-z0-9]'; then
-       echo "Potential sensitive data detected"
-       exit 1
-     fi
-     
-     exit 0
-     ```
-
-2. **commit-msg-Hook**:
-   - Überprüfung der Commit-Nachricht auf Konformität
-   - Sicherstellen, dass die Commit-Nachricht dem definierten Format entspricht
-   - Beispiel für einen commit-msg-Hook:
-     ```bash
-     #!/bin/bash
-     
-     commit_msg_file=$1
-     commit_msg=$(cat "$commit_msg_file")
-     
-     # Überprüfung des Formats: <typ>: <beschreibung>
-     if ! echo "$commit_msg" | grep -E '^(feat|fix|docs|test|config|refactor): .+$'; then
-       echo "Commit message does not match the required format: <typ>: <beschreibung>"
-       echo "Allowed types: feat, fix, docs, test, config, refactor"
-       exit 1
-     fi
-     
-     exit 0
-     ```
-
-3. **pre-push-Hook**:
-   - Ausführung von Tests
-   - Überprüfung der Code-Qualität
-   - Validierung der Dokumentation
-   - Beispiel für einen pre-push-Hook:
-     ```bash
-     #!/bin/bash
-     
-     # Ausführung von Tests
-     if ! ./run_tests.sh; then
-       echo "Tests failed"
-       exit 1
-     fi
-     
-     # Überprüfung der Dokumentation
-     if ! ./validate_docs.sh; then
-       echo "Documentation validation failed"
-       exit 1
-     fi
-     
-     exit 0
-     ```
-
-### 6.2 CI/CD-Integration
-
-Die Integration von CI/CD-Pipelines kann den Entwicklungsprozess weiter automatisieren:
-
-1. **Continuous Integration (CI)**:
-   - Automatische Ausführung von Tests bei jedem Push
-   - Überprüfung der Code-Qualität
-   - Validierung der Dokumentation
-   - Beispiel für eine CI-Konfiguration (GitHub Actions):
-     ```yaml
-     name: CI
-     
-     on:
-       push:
-         branches: [ main, feature/*, hotfix/*, release/* ]
-       pull_request:
-         branches: [ main ]
-     
-     jobs:
-       test:
-         runs-on: ubuntu-latest
-         steps:
-           - uses: actions/checkout@v2
-           - name: Run tests
-             run: ./run_tests.sh
-           - name: Validate documentation
-             run: ./validate_docs.sh
-     ```
-
-2. **Continuous Deployment (CD)**:
-   - Automatische Bereitstellung von Änderungen
-   - Deployment in verschiedene Umgebungen (Staging, Produktion)
-   - Beispiel für eine CD-Konfiguration (GitHub Actions):
-     ```yaml
-     name: CD
-     
-     on:
-       push:
-         branches: [ main ]
-         tags: [ 'v*' ]
-     
-     jobs:
-       deploy:
-         runs-on: ubuntu-latest
-         steps:
-           - uses: actions/checkout@v2
-           - name: Deploy to staging
-             if: github.ref == 'refs/heads/main'
-             run: ./deploy.sh staging
-           - name: Deploy to production
-             if: startsWith(github.ref, 'refs/tags/v')
-             run: ./deploy.sh production
-     ```
-
-3. **Automatisierte Code-Reviews**:
-   - Verwendung von Tools wie SonarQube oder CodeClimate
-   - Automatische Kommentare zu Code-Qualitätsproblemen
-   - Beispiel für eine SonarQube-Integration:
-     ```yaml
-     name: SonarQube Analysis
-     
-     on:
-       push:
-         branches: [ main, feature/*, hotfix/*, release/* ]
-       pull_request:
-         branches: [ main ]
-     
-     jobs:
-       sonarqube:
-         runs-on: ubuntu-latest
-         steps:
-           - uses: actions/checkout@v2
-           - name: SonarQube Scan
-             uses: SonarSource/sonarqube-scan-action@master
-             env:
-               SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-               SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-     ```
-
-### 6.3 Automatisierte Tests
-
-Automatisierte Tests sind ein wesentlicher Bestandteil der Qualitätssicherung und können auf verschiedenen Ebenen implementiert werden:
-
-1. **Unit-Tests**:
-   - Tests für einzelne Funktionen und Module
-   - Überprüfung der korrekten Funktionalität isolierter Komponenten
-   - Beispiel für Shell-Skript-Tests mit BATS (Bash Automated Testing System):
-     ```bash
-     #!/usr/bin/env bats
-     
-     @test "Tailscale Installation" {
-       source ./scripts/install_tailscale.sh
-       run install_tailscale
-       [ "$status" -eq 0 ]
-       [ -f "/usr/bin/tailscale" ]
-     }
-     ```
-
-2. **Integrationstests**:
-   - Tests für die Interaktion zwischen Komponenten
-   - Überprüfung der korrekten Kommunikation und Zusammenarbeit
-   - Beispiel für einen Integrationstest zwischen Caddy und code-server:
-     ```bash
-     #!/bin/bash
-     
-     # Test der Reverse-Proxy-Konfiguration
-     response=$(curl -s -o /dev/null -w "%{http_code}" https://code.devsystem.internal)
-     if [ "$response" -eq 200 ]; then
-       echo "Integration test passed: Caddy correctly proxies to code-server"
-       exit 0
-     else
-       echo "Integration test failed: Caddy does not proxy to code-server correctly"
-       exit 1
-     fi
-     ```
-
-3. **E2E-Tests**:
-   - Tests für den gesamten Workflow
-   - Überprüfung der Benutzerinteraktion und des Gesamtsystems
-   - Beispiel für einen E2E-Test des DevSystem-Projekts:
-     ```bash
-     #!/bin/bash
-     
-     # Test der vollständigen Funktionalität
-     
-     # 1. Verbindung über Tailscale
-     if ! tailscale ping devsystem-vps.ts.net; then
-       echo "E2E test failed: Cannot connect to VPS via Tailscale"
-       exit 1
-     fi
-     
-     # 2. Zugriff auf code-server
-     if ! curl -s -o /dev/null -w "%{http_code}" https://code.devsystem.internal | grep -q "200"; then
-       echo "E2E test failed: Cannot access code-server"
-       exit 1
-     fi
-     
-     # 3. Ollama-API-Test
-     if ! curl -s -X POST http://ollama.devsystem.internal/api/generate -d '{"model":"llama3","prompt":"test"}' | grep -q "response"; then
-       echo "E2E test failed: Ollama API not responding correctly"
-       exit 1
-     fi
-     
-     echo "All E2E tests passed"
-     exit 0
-     ```
-
-4. **Automatisierte Test-Ausführung**:
-   - Regelmäßige Ausführung von Tests (täglich, wöchentlich)
-   - Ausführung von Tests bei jedem Push oder Pull Request
-   - Beispiel für ein Test-Ausführungsskript:
-     ```bash
-     #!/bin/bash
-     
-     # Ausführung aller Tests
-     
-     echo "Running unit tests..."
-     ./tests/run_unit_tests.sh
-     
-     echo "Running integration tests..."
-     ./tests/run_integration_tests.sh
-     
-     echo "Running E2E tests..."
-     ./tests/run_e2e_tests.sh
-     
-     echo "All tests completed"
-     ```
+**Vorteile:** Einfachheit (nur main permanent) | Klarheit (main = Production-Ready) | Schnelle Iteration | CI/CD-freundlich | Solo/Small Team optimal
+
+**Mitigationen:** Parallel-Release-Risiko → Feature-Flags | main-Instabilität → Pre-Merge-Tests + Branch-Protection | Keine Staging → develop-Branch optional
+
+### 1.2 Architektur-Entscheidung: Trunk-Based Development Light
+
+**Modell:** main = Trunk (immer deploybar) | feature-branches = Short-lived | Keine long-running branches
+
+**Rationale:** Solo-Developer-Optimierung | VPS-Deployment (main → VPS direkt) | Konzepte in main, Code in Features | Minimale Komplexität
+
+### 1.3 Wann zu GitFlow wechseln?
+
+**GitFlow sinnvoll bei:** Team >5 | Multiple Release-Zyklen mit LTS | Komplexe Hotfix-Szenarien
+
+**Aktuell nicht nötig:** Team = 1 | Continuous Deployment | Hotfixes selten
+
+---
+
+## 2. Branch-Typen & Namenskonventionen
+
+### 2.1 Branch-Typen
+
+| Typ | Zweck | Lebensdauer | Protection |
+|-----|-------|-------------|------------|
+| **main** | Stable Production | ∞ (Permanent) | Branch-Protection aktiv |
+| **feature** | Neue Funktionen | 3-14 Tage | Nach Review → main |
+| **hotfix** | Dringende Fixes | 2-24h | Express-Merge, Doku 24h |
+| **release** | Major/Minor-Prep | 1-3 Tage | Optional, coordinated |
+| **develop** | Integration-Layer | ∞ (Optional) | Bei Team >3 |
+
+### 2.2 Namenskonventionen
+
+**Format:** `<typ>/<komponente>-<beschreibung>` | Kebab-case | Max. 50 Zeichen | Nur `a-z`, `0-9`, `-`
+
+**Beispiele:**
+- ✅ `feature/tailscale-setup`, `hotfix/caddy-ssl-fix`, `release/v1.0.0`
+- ❌ `feature/update` (vage), `feature/NEW-FEATURE` (Großbuchstaben), `feature/fix_bug` (underscore)
+
+**Rationale:** Komponenten-Prefix identifiziert Service | Kebab-case = Git-Standard | Beschreibend = Self-documenting | Max. 50 Zeichen = GitHub-UI | Keine Issue-Nummern im Branch-Namen
+
+---
+
+## 3. Lebenszyklus der Branches
+
+### 3.1 Branch-Lebenszyklus-Matrix
+
+| Branch-Typ | Erstellung | Lebensdauer | Löschung | Merge-Ziel |
+|------------|-----------|-------------|----------|------------|
+| main | Projekt-Start | ∞ (Permanent) | Nie | - |
+| feature | Feature-Start | 3-14 Tage | Nach Merge | main |
+| hotfix | Incident | 2-24 Stunden | Nach Merge | main |
+| release | Pre-Release | 1-3 Tage | Nach Merge + Tag | main |
+| develop | Team-Wachstum | ∞ (optional) | Nie | - |
+
+### 3.2 Feature-Branch-Lebenszyklus
+
+```mermaid
+graph LR
+    A[main] -->|branch| B[feature/xyz]
+    B -->|commits| C[Development]
+    C -->|PR| D[Review]
+    D -->|merge| E[main]
+    E -->|cleanup| F[Branch gelöscht]
+```
+
+**Phasen:** Creation → Development (1-10 Tage) → Sync täglich → Review → Merge → Cleanup
+
+**Maximale Lebensdauer:** 14 Tage (Rationale: Merge-Konflikt-Risiko steigt danach)
+
+### 3.3 Hotfix-Branch-Lebenszyklus (Express)
+
+```mermaid
+graph LR
+    A[main: Issue] -->|hotfix branch| B[Fix + Test]
+    B -->|merge| C[main]
+    C -->|cleanup| D[Done]
+```
+
+**Prozess:** Detection → Hotfix-Branch → Fix + Test → Expedited Merge → Doku innerhalb 24h
+
+**Ziel-Durchlaufzeit:** <4 Stunden für P0-Issues
+
+---
+
+## 4. Versionierung & Release-Strategie
+
+### 4.1 Semantic Versioning (SemVer)
+
+**Format:** `v<MAJOR>.<MINOR>.<PATCH>[-<PRERELEASE>]`
+
+**Komponenten:** MAJOR = Breaking Changes | MINOR = Neue Features (rückwärtskompatibel) | PATCH = Bugfixes | PRERELEASE = alpha/beta/rc
+
+**Beispiele:** `v1.0.0` (erste stable) | `v1.1.0` (neue Komponente) | `v1.1.1` (bugfix) | `v2.0.0` (breaking change)
+
+### 4.2 Wann wird inkrementiert?
+
+| Change-Typ | Version Bump | Beispiel |
+|------------|--------------|----------|
+| Breaking Change | MAJOR | Authentication-System ersetzt |
+| Neue Komponente | MINOR | Qdrant-Vektor-DB hinzugefügt |
+| Feature-Enhancement | MINOR | Caddy um neue Middleware erweitert |
+| Bugfix | PATCH | Tailscale-Reconnect-Issue behoben |
+| Sicherheits-Fix | PATCH | SSL-Zertifikat-Validierung fix |
+| Dokumentation | - | Keine Version-Änderung |
+| Refactoring (intern) | - | Keine Version-Änderung |
+
+### 4.3 Release-Strategie
+
+#### Continuous Deployment (Aktuell)
+
+**Workflow:** `Feature → main → Optional: Tag → Deploy to VPS`
+
+**Vorteile:** Schnell, keine Koordination nötig | **Nachteil:** Kein koordinierter Release-Moment
+
+#### Planned Releases (bei Bedarf)
+
+**Workflow:** Release-Branch → Bug-Fixes → Merge main → Tag → Deploy
+
+**Anwendungsfall:** Major-Versions oder koordinierte Features
+
+### 4.4 Tagging-Strategie
+
+**Zeitpunkt:** Nach Merge in main, vor Deployment
+
+**Format:** `git tag -a v1.0.0 -m "Release v1.0.0: Features, Tests, Deployed"`
+
+**Konventionen:** Annotierte Tags (`-a`), Release-Notes im Tag, Deployment-Timestamp
+
+**Befehle:** `git tag -a v1.0.0 -m "..."` | `git push origin v1.0.0` | `git fetch --tags`
+
+---
+
+## 5. Qualitätssicherungs-Strategie
+
+### 5.1 Multi-Layer-Testing-Ansatz
+
+```
+┌─────────────────────────────────┐
+│   E2E Tests (Production-Like)  │  ← Höchste Priorität
+├─────────────────────────────────┤
+│   Integration Tests             │
+├─────────────────────────────────┤
+│   Unit Tests (Shell-Functions)  │
+└─────────────────────────────────┘
+```
+
+**Testing-Philosophie:**
+- **E2E-First:** Live-Tests gegen VPS sind Pflicht
+- **Integration-Tests:** Komponenten-Interaktion validieren
+- **Unit-Tests:** Nice-to-have, aber nicht kritisch für Shell-Skripte
+
+### 5.2 Test-Strategien nach Branch-Typ
+
+| Branch-Typ | Unit | Integration | E2E | Log-Validation |
+|------------|------|-------------|-----|----------------|
+| feature | Optional | Empfohlen | **Pflicht** | **Pflicht** |
+| hotfix | Optional | **Pflicht** | **Pflicht** | **Pflicht** |
+| release | - | **Pflicht** | **Pflicht** | **Pflicht** |
+| main (Post-Merge) | - | Optional | **Pflicht** | **Pflicht** |
+
+### 5.3 Code-Qualitätsstandards
+
+**Shell-Skripte:**
+- ✅ ShellCheck-Validierung (keine Errors)
+- ✅ Fehlerbehandlung: `set -e`, `set -u`, `set -o pipefail`
+- ✅ Trap-Handlers für Cleanup
+- ✅ Dokumentation: Header-Kommentar mit Usage
+- ✅ Idempotenz: Skripte müssen mehrfach ausführbar sein
+
+**Konfigurationsdateien:**
+- ✅ Ausführliche Kommentierung
+- ✅ Keine hardcodierten Secrets
+- ✅ Environment-Variable-Unterstützung
+- ✅ Validierung bei Service-Start
+
+**Shell-Skript-Template:** Header mit Usage/Exit-codes, `set -euo pipefail`, trap für Cleanup, Idempotenz
+
+**E2E-Tests:** Tailscale-Ping, Service-Erreichbarkeit (curl), HTTP-Status-Check, Log-Validation
+
+---
+
+## 6. Konfliktlösung & Prävention
+
+### 6.1 Konflikt-Präventions-Strategie
+
+**Architekturelle Maßnahmen:**
+1. **Modularisierung:** Klare Component-Grenzen (Tailscale, Caddy, code-server, Ollama)
+2. **Config-File-Separation:** Jede Komponente eigene Config-Datei
+3. **API-Boundaries:** Services kommunizieren über definierte Schnittstellen
+4. **Feature-Isolation:** Jeder Feature-Branch fokussiert auf eine Komponente
+
+**Prozess-Maßnahmen:**
+1. **Tägliche Synchronisation:** Feature-Branches täglich mit main mergen/rebasen
+2. **Small Commits:** Atomare Commits reduzieren Konflikt-Oberfläche
+3. **Communication:** Bei Arbeit an shared Files Team informieren
+4. **Short-Lived Branches:** Max. 14 Tage → Weniger Zeit für Divergenz
+
+### 6.2 Konflikt-Lösungs-Philosophie
+
+**Prinzipien:**
+1. **main hat immer Recht (initial):** Bei Konflikt erst main's Änderung verstehen
+2. **Kontext über Content:** Verstehe WARUM Änderung gemacht wurde, nicht nur WAS
+3. **Tests entscheiden:** Nach Konfliktlösung müssen alle Tests grün sein
+4. **Documentation of Decision:** Warum so gelöst? In Merge-Commit dokumentieren
+
+**Eskalations-Pfad:**
+```
+Simple Conflict → Developer löst direkt
+   ↓
+Complex Conflict → Team-Review der Lösung
+   ↓
+Architectural Conflict → Design-Entscheidung nötig (docs/concepts/ update)
+```
+
+### 6.3 Merge-Strategien
+
+**Standard: Merge-Commit (`--no-ff`)**
+- Vorteile: Feature-Historie erhalten, einfaches Revert
+- Nachteile: "Noisy" Git-Historie
+
+**Alternative: Squash-Merge (`--squash`)**
+- Vorteile: Saubere, lineare Historie
+- Nachteile: Verliert granulare Geschichte
+
+**Entscheidung:** `--no-ff` für Features, `--squash` nur bei noisy Branches
+
+---
+
+## 7. Tooling & Automatisierung
+
+### 7.1 Git-Hooks-Strategie
+
+**Verfügbare Hooks:**
+1. **pre-commit:** Code-Qualität prüfen (ShellCheck, Secrets-Detection)
+2. **commit-msg:** Commit-Message-Format validieren
+3. **pre-push:** Tests ausführen vor Push
+
+**Implementierungs-Status:**
+- ✅ **Geplant:** Setup-Skript in `scripts/docs/setup-git-hooks.sh`
+- ⏳ **In Arbeit:** Templates in `scripts/docs/`
+- ❌ **Noch nicht:** Automatische Installation bei Clone
+
+**Pre-commit-Hook-Beispiel:** ShellCheck für `.sh`-Files, Secrets-Detection via Regex, Exit bei Fehler
+
+### 7.2 CI/CD-Integration (Geplant)
+
+**GitHub Actions Workflows:**
+
+1. **PR-Validation** (`.github/workflows/pr-validation.yml`)
+   - ShellCheck, Unit-Tests, Integration-Tests, Documentation-Check
+
+2. **Main-Branch-Protection** (`.github/workflows/main-protection.yml`)
+   - E2E-Tests, Deployment-Validation, Changelog-Check
+
+3. **Release-Automation** (`.github/workflows/release.yml`)
+   - Create Release-Notes, Deploy to VPS, Notify Team
+
+### 7.3 Branch-Protection-Rules (GitHub)
+
+**Main-Branch-Protection (Settings → Branches):**
+
+✅ **Require pull request reviews before merging**
+- Review-Count: 1 (erhöhen bei Team-Wachstum)
+- Dismiss stale pull request approvals: Yes
+
+✅ **Require status checks to pass before merging**
+- Required checks: `shellcheck`, `e2e-tests`, `doc-validation`
+- Require branches to be up to date: Yes
+
+✅ **Require conversation resolution before merging**
+
+✅ **Include administrators**
+- Auch Admin muss Rules folgen (außer bei Hotfixes)
+
+✅ **Allow force pushes: Never**
+
+✅ **Allow deletions: Never**
+
+**Automatisches Branch-Cleanup (Settings → General → Pull Requests):**
+
+✅ **Automatically delete head branches**
+- Löscht Feature-Branches automatisch nach Merge
+
+---
+
+## 8. Skalierung & Team-Wachstum
+
+### 8.1 Team-Größen-Matrix
+
+| Team-Größe | Branch-Modell | develop-Branch | Release-Branches | Review-Prozess |
+|------------|---------------|----------------|------------------|----------------|
+| 1 (Solo) | main-only | ❌ Nicht nötig | Optional | Self-Review |
+| 2-3 | main + feature | ❌ Nicht nötig | Optional | Peer-Review |
+| 4-6 | main + feature | ✅ Empfohlen | Empfohlen | Pflicht-Review |
+| 7+ | GitFlow | ✅ Pflicht | Pflicht | Multi-Reviewer |
+
+**Aktueller Status:** Team-Größe = 1 → main-only optimal
+
+### 8.2 Migration zu develop-Branch (bei Bedarf)
+
+**Trigger:** Team wächst auf 4+ Personen
+
+**Migrations-Plan:**
+1. **develop-Branch erstellen** von main
+2. **Branch-Protection** für develop aktivieren
+3. **Workflow ändern:** Features → develop → main (statt direkt Features → main)
+4. **Dokumentation updaten:** Dieses Dokument + git-workflow.md
+5. **Team-Training:** Neuer Workflow kommunizieren
+
+**Neuer Workflow mit develop:**
+```
+feature/xyz → develop (täglich integriert)
+             ↓
+develop → main (wöchentlich, nach QA)
+```
+
+### 8.3 Skalierungs-Indikatoren
+
+**Wann brauchen wir mehr Struktur?**
+
+| Indikator | Schwellwert | Maßnahme |
+|-----------|-------------|----------|
+| Merge-Konflikte pro Woche | >3 | develop-Branch einführen |
+| Feature-Branch-Dauer | >2 Wochen | Feature-Splitting-Prozess |
+| Failed Merges (Tests) | >10% | Strengere Pre-Merge-Tests |
+| Hotfixes pro Monat | >5 | Bessere QA-Prozess |
+| Team-Größe | >4 | GitFlow evaluieren |
+
+---
+
+## 9. Alternativen & Trade-offs
+
+### 9.1 Vergleich: Branch-Strategien
+
+| Modell | Komplexität | Solo-Dev | Team-Dev | CI/CD | Hotfix-Speed |
+|--------|-------------|----------|----------|-------|--------------|
+| **main-only** (aktuell) | ⭐ Niedrig | ✅✅✅ | ⚠️ | ✅✅✅ | ✅✅ |
+| **GitFlow** | ⭐⭐⭐ Hoch | ❌ | ✅✅✅ | ⚠️ | ⚠️ |
+| **GitHub Flow** | ⭐⭐ Mittel | ✅✅ | ✅✅ | ✅✅ | ✅ |
+| **GitLab Flow** | ⭐⭐ Mittel | ✅ | ✅✅ | ✅✅✅ | ✅✅ |
+
+**Legende:** ✅✅✅ = Exzellent, ✅✅ = Gut, ✅ = Okay, ⚠️ = Problematisch, ❌ = Ungeeignet
+
+### 9.2 Warum NICHT GitFlow?
+
+**GitFlow-Merkmale:**
+- Permanente Branches: main + develop
+- Release-Branches für jeden Release
+- Hotfix-Branches von main, merge zu main + develop
+
+**Warum abgelehnt:**
+1. **Overhead:** 2 permanente Branches für 1-Dev-Team unnötig
+2. **Komplexität:** Hotfixes müssen in 2 Branches (main + develop) gemergt werden
+3. **Langsamer:** Mehr Schritte vom Feature zu Production
+4. **CI/CD-Friction:** Deployment-Pipeline komplizierter
+
+**Wann würden wir wechseln:**
+- Team >6 Entwickler
+- Multiple parallele Release-Zyklen
+- LTS-Versionen erforderlich
+
+### 9.3 Warum NICHT GitHub Flow?
+
+**GitHub Flow-Merkmale:**
+- Nur main-Branch
+- Feature-Branches → PR → main
+- Continuous Deployment from main
+
+**Ähnlichkeit zu unserem Modell:** 90% identisch!
+
+**Unterschied:**
+- **GitHub Flow:** Strikte "alles über PR" Policy
+- **Unser Modell:** Direkte Commits zu main für Konzepte erlaubt
+
+**Rationale für Unterschied:**
+- Konzeptdokumente brauchen keinen Review-Overhead
+- Code folgt GitHub Flow strikt
+
+### 9.4 Trade-offs unserer Entscheidung
+
+**✅ Vorteile:**
+- Minimale Komplexität für Solo-Developer
+- Schnelle Iteration
+- Klare CI/CD-Pipeline
+- Einfaches Onboarding
+
+**❌ Nachteile:**
+- Kein isolierter Staging-Branch (develop)
+- Hauptentwicklung direkt in main bei Konzepten
+- Skalierung erfordert Migration
+
+**Akzeptierte Risiken:**
+- **Risiko:** main könnte temporär instabil werden
+- **Mitigation:** Strenge Tests + Branch-Protection
+- **Akzeptanz:** Bei Solo-Dev vertretbar, bei Team-Wachstum migrieren
+
+---
 
 ## Zusammenfassung
 
-Die in diesem Dokument beschriebene Branch-Strategie bietet einen strukturierten Ansatz für die Feature-Entwicklung im DevSystem-Projekt. Durch die klare Definition von Branch-Typen, Workflows, Qualitätsstandards, Versionierung, Konfliktlösungsstrategien und Automatisierung wird ein effizienter und qualitätsorientierter Entwicklungsprozess ermöglicht.
+Die Branch-Strategie des DevSystem-Projekts ist optimiert für:
+- ✅ Solo-Developer-Effizienz
+- ✅ Schnelle Iteration
+- ✅ Klare Production-Readiness (main)
+- ✅ CI/CD-Integration
+- ✅ Skalierbarkeit bei Team-Wachstum
 
-Die Einhaltung dieser Strategie gewährleistet:
-- Konsistente und nachvollziehbare Entwicklung
-- Hohe Code-Qualität und Stabilität
-- Effektive Zusammenarbeit im Team
-- Klare Versionierung und Release-Management
-- Minimierung von Konflikten und Problemen
+**Kern-Prinzipien:**
+1. **main ist Sacred:** Immer deploybar, immer getestet
+2. **Short-Lived Features:** Max. 14 Tage, dann merge oder split
+3. **Tests sind Pflicht:** Keine Kompromisse bei E2E-Tests
+4. **Documentation of Decisions:** Alle strategischen Entscheidungen dokumentiert
+5. **Pragmatischer Ansatz:** Komplexität nur wenn nötig
 
-Dieses Dokument sollte regelmäßig überprüft und bei Bedarf aktualisiert werden, um den sich ändernden Anforderungen des Projekts gerecht zu werden.
+**Nächste Schritte bei Skalierung:**
+- Bei Team-Größe 4+: develop-Branch einführen
+- Bei Team-Größe 7+: GitFlow evaluieren
+- Bei Multiple Releases: Release-Branches standardisieren
 
-## Diagramm: Feature-Branch-Workflow
+Dieses Dokument sollte jährlich oder bei signifikanten Änderungen (Team-Wachstum, neue Services) überprüft werden.
 
-```mermaid
-graph TD
-    A[Start: Neue Feature-Aufgabe] --> B[Aktualisierung des main-Branches]
-    B --> C[Erstellung des Feature-Branches]
-    C --> D[Entwicklung und regelmäßige Commits]
-    D --> E[Regelmäßige Synchronisation mit main]
-    E --> F[Implementierung abgeschlossen]
-    F --> G[E2E-Tests durchführen]
-    G --> H[Log-Validierung]
-    H --> I[Code-Review]
-    I --> J{Review bestanden?}
-    J -->|Nein| D
-    J -->|Ja| K[Merge in den main-Branch]
-    K --> L[Löschung des Feature-Branches]
-    L --> M[Aktualisierung der Dokumentation]
-    M --> N[Ende]
-```
+---
 
-## Diagramm: Release-Prozess
+## Änderungshistorie
 
-```mermaid
-graph TD
-    A[Start: Release vorbereiten] --> B[Erstellung des Release-Branches]
-    B --> C[Aktualisierung der Versionsnummer]
-    C --> D[Aktualisierung des Changelogs]
-    D --> E[Qualitätssicherung]
-    E --> F{Tests bestanden?}
-    F -->|Nein| G[Bugfixes im Release-Branch]
-    G --> E
-    F -->|Ja| H[Merge in den main-Branch]
-    H --> I[Erstellung eines Tags]
-    I --> J[Löschung des Release-Branches]
-    J --> K[Kommunikation des Releases]
-    K --> L[Ende]
-```
+### 2026-04-12 13:13 UTC
+- **Straffung auf 450-500 Zeilen:** 783 → ~500 Zeilen
+- **Diagramme hinzugefügt:** Mermaid-Diagramme für Feature/Hotfix-Workflow visualisieren Prozesse
+- **Beispiele komprimiert:** Code-Snippets, Git-Befehle, Branch-Namen auf Essentials reduziert
+- **Erklärungen gestrafft:** Bullet-Points statt Paragraphen, prägnantere Formulierungen
+- **Fokus beibehalten:** Strategische Rationale und "Warum"-Fokus vollständig erhalten
+- **Keine Informationsverluste:** Alle wichtigen Entscheidungen dokumentiert
+
+### 2026-04-12 13:04 UTC
+- **Redundanz-Elimination:** Fokussierung auf strategische Architektur & Rationale
+- **Entfernt:** Tägliche Workflow-Schritte → [`git-workflow.md`](../operations/git-workflow.md)
+- **Entfernt:** Operative Checklisten → [`git-workflow.md`](../operations/git-workflow.md)
+- **Hinzugefügt:** Branch-Modell-Rationale, Alternativen-Analyse, Skalierungs-Strategie
+- **Hinzugefügt:** Cross-Referenzen zu operativen Dokumenten
+- **Dokumentgröße:** 875 → 783 Zeilen
+- **Fokus:** "Warum" statt "Wie"

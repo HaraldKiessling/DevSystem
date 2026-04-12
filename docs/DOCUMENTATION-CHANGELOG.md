@@ -4,6 +4,266 @@ Chronologische Aufzeichnung aller Änderungen an der Projektdokumentation.
 
 ---
 
+## 2026-04-12 - Automatische Regelüberwachung
+
+**Änderungen:**
+- **validate-docs.sh:** Pre-commit Hook für Dokumentationsprüfung erstellt
+  - Prüft Dokumentengröße (100-500 Zeilen)
+  - Erkennt ungültige todo.md-Referenzen
+  - Konfigurierbare Ausnahmen (README.md, CHANGELOG.md, issue-examples.md)
+  - Exit-Code 1 bei Verstößen
+- **GitHub Actions Workflow:** CI-Pipeline für automatische Validierung
+  - Trigger: Pull Requests und Pushes zu `main` (docs/**-Änderungen)
+  - Dokumentenstruktur-Validierung
+  - Broken-Link-Check (github-action-markdown-link-check)
+  - Markdown-Syntax-Validierung (markdownlint-cli2)
+- **Markdown Link Check Konfiguration:** JSON-Config für Link-Checker
+  - Ignoriert localhost-Links
+  - Retry-Mechanismus (3x) mit Timeout (20s)
+  - HTTP-Status-Codes: 200, 206
+- **documentation-governance.md:** Neuer Abschnitt "Automatische Regelüberwachung"
+  - Pre-commit Hook-Setup-Anleitung
+  - GitHub Actions-Beschreibung
+  - Tabelle der geprüften Regeln mit Ausnahmen
+  - Konfigurationsanleitung
+- **PROJECT-RULES.md:** Abschnitt "Automatische Validierung" ergänzt
+  - Verweis auf Pre-commit Hook, GitHub Actions, manuelle Prüfung
+  - Cross-Referenz zu documentation-governance.md
+- **scripts/docs/README.md:** Dokumentation der Dokumentations-Tools erstellt
+  - Setup-Anleitung für Pre-commit Hook
+  - Manuelle Validierung
+  - Übersicht der Prüfungen
+  - Fehlerbehandlung und CI/CD-Integration
+
+**Grund:**
+- Issue #19: Automatisierung zur Überwachung der Dokumentationsregeln
+- Verhindert Regelbrüche (Mini-Dokumente <100 Zeilen, Riesen-Dokumente >500 Zeilen)
+- Eliminiert todo.md-Referenzen in aktiven Dokumenten
+- Sichert Markdown-Qualität und Link-Integrität
+
+**Issue:** #19
+
+**Dateien erstellt:**
+- scripts/docs/validate-docs.sh (Pre-commit Hook, 52 Zeilen)
+- .github/markdown-link-check-config.json (Konfiguration, 14 Zeilen)
+- scripts/docs/README.md (Dokumentation, 36 Zeilen)
+
+**Dateien geändert:**
+- .github/workflows/docs-validation.yml (GitHub Actions Workflow aktualisiert)
+- docs/operations/documentation-governance.md (Abschnitt "Automatische Regelüberwachung" hinzugefügt)
+- docs/project/PROJECT-RULES.md (Abschnitt "Automatische Validierung" hinzugefügt)
+- docs/DOCUMENTATION-CHANGELOG.md (dieser Eintrag)
+
+**Setup-Anleitung:**
+```bash
+# Pre-commit Hook einrichten
+cp scripts/docs/validate-docs.sh .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+
+# Manuelle Validierung
+./scripts/docs/validate-docs.sh
+```
+
+---
+
+## 2026-04-12 - Erweiterung PROJECT-RULES.md (Issue #19)
+
+**Änderungen:**
+- **PROJECT-RULES.md:** Von 27 auf 308 Zeilen erweitert (Faktor 11+)
+  - **Abschnitt 1 neu:** Dokumentation im Repository
+    - Markdown-Standards (UTF-8, Syntax-Highlighting, relative Pfade)
+    - Dokumentenstruktur-Richtlinien
+    - Code-Beispiele mit Best Practices
+  - **Abschnitt 2 erweitert:** System- und Projektanforderungen
+    - Infrastruktur & Zielsystem (aus Original)
+    - System-Architektur-Querverweise hinzugefügt
+  - **Abschnitt 3 erweitert:** Projektmanagement & GitHub Issues
+    - Feature-basierter Workflow detailliert
+    - Issue-Lifecycle visualisiert (Icebox → Backlog → Next → In Progress → Done)
+    - Milestone-Management-Richtlinien
+    - Labels & Bedeutung
+    - Value/Effort-Ratio mit konkretem Beispiel
+  - **Abschnitt 4 erweitert:** Entwicklungs- und Test-Workflow
+    - Testing-Strategie (Unit/Integration/E2E)
+    - Code-Review-Prozess
+    - Deployment-Checkliste
+  - **Abschnitt 5 neu:** Richtlinien für Implementierung
+    - Security-Best-Practices
+    - Performance-Überlegungen
+    - Code-Qualität-Standards
+  - **Abschnitt 6 erweitert:** Systemarchitektur & Roo
+    - Roo-Mode-Nutzung detailliert (Code/Architect/Debug/Orchestrator)
+    - Best Practices für Roo-Workflow
+    - Roo-Rules-Referenz
+  - **Abschnitt 7 neu:** Definition of Done (DoD)
+    - Generische DoD für alle Tasks
+    - Feature-/Bug-/Docs-spezifische DoD
+    - Verweis auf git-workflow.md
+  - **Abschnitt 8 neu:** Kommunikationsrichtlinien
+    - Commit-Message-Konventionen (feat/fix/docs/refactor/test/chore)
+    - PR-Beschreibungs-Template
+    - Issue-Kommentar-Best-Practices
+    - Code-Dokumentations-Richtlinien
+  - **Abschnitt 9 neu:** Troubleshooting & Support
+    - Hilfe-Ressourcen (Dokumentation/Archive/Issues)
+    - Debugging-Workflow (7 Schritte)
+    - Eskalationspfad
+  - **Abschnitt 10 neu:** Wichtige Querverweise
+    - Operations & Workflows (4 Dokumente)
+    - Strategien & Konzepte (3 Dokumente)
+    - Architektur & Konzepte (3 Dokumente)
+
+**Hinzugefügte Querverweise:**
+- `feature-workflow.md`, `issue-guidelines.md`, `issue-acceptance-criteria.md`, `issue-examples.md`
+- `git-workflow.md`, `branch-strategie.md`, `documentation-governance.md`
+- `deployment-prozess.md`, `VISION.md`
+- `ARCHITECTURE.md`, `testkonzept.md`, `sicherheitskonzept.md`
+- `tailscale-konzept.md`, `caddy-konzept.md`, `code-server-konzept.md`
+
+**Praktische Beispiele:**
+- Value/Effort-Ratio-Berechnung (API Rate Limiting vs. Dashboard UI)
+- Commit-Message-Format mit konkretem Beispiel
+- PR-Beschreibungs-Template
+- Deployment-Checkliste
+
+**Grund:**
+- Issue #19 identifizierte PROJECT-RULES.md mit nur 27 Zeilen als zu klein
+- Zielbereich: 100-500 Zeilen
+- Bedarf an konkreten Workflow-Details, Beispielen und Richtlinien
+- Als Quick-Reference mit Links zu detaillierten Dokumenten konzipiert
+
+**Issue:** #19
+
+**Dateien geändert:**
+- docs/project/PROJECT-RULES.md (27 → 308 Zeilen, +281 Zeilen)
+
+**Hinweis:** Dokument bleibt als Quick-Reference nutzbar - Details in verlinkten Dokumenten.
+
+---
+
+## 2026-04-12 - Redundanz-Elimination & Straffung: git-workflow.md & branch-strategie.md (Issue #19)
+
+**Änderungen:**
+- **git-workflow.md:** Fokussierung auf operative Workflows + Straffung (715 → 620 → 418 Zeilen, -42%)
+  - **Phase 1 (Redundanz-Elimination):** 715 → 620 Zeilen
+    - Entfernt: Detaillierte Branch-Strategie-Theorie → branch-strategie.md
+    - Entfernt: Ausführliche Test-Beispiele und Automatisierungs-Details → branch-strategie.md
+    - Behalten: DoD-Checklisten, tägliche Git-Operationen, Merge-Prozess, Branch-Cleanup
+    - Hinzugefügt: Cross-Referenzen zu strategischen Dokumenten
+  - **Phase 2 (Straffung auf Zielgröße):** 620 → 418 Zeilen
+    - DoD-Checklisten: Tabellenformat statt ausführliche Listen (116 → 65 Zeilen)
+    - Issue-Closing-Syntax: Auf Essentials reduziert (108 → 40 Zeilen)
+    - Branch-Management: Kompakte Befehle statt ausführliche Erklärungen (104 → 60 Zeilen)
+    - Commit-Beispiele: Auf 3 essenzielle reduziert
+    - Struktur: Mehr Tabellen statt lange Listen
+    - Fokus vollständig beibehalten: Operative Anwendbarkeit erhalten
+    - Keine Informationsverluste: Alle wichtigen Arbeitsabläufe dokumentiert
+  
+- **branch-strategie.md:** Fokussierung auf strategische Architektur + weitere Straffung (875 → 783 → 472 Zeilen, -46%)
+  - **Phase 1 (Redundanz-Elimination):**
+    - Entfernt: Tägliche Workflow-Schritte und operative Checklisten → git-workflow.md
+    - Entfernt: Detaillierte Commit-Beispiele und Issue-Closing-Syntax → git-workflow.md
+    - Behalten: Branch-Modell-Rationale, Versionierung, Release-Strategie, Alternativen-Analyse
+    - Hinzugefügt: "Warum main-basiert?", Skalierungs-Strategie, Trade-off-Analyse
+  - **Phase 2 (Straffung auf Zielgröße):**
+    - Beispiele komprimiert: Code-Snippets, Git-Befehle auf Essentials reduziert
+    - Tabellen statt Bullet-Points für Branch-Typen
+    - Erklärungen gestrafft: Bullet-Points statt Paragraphen, prägnantere Formulierungen
+    - Mermaid-Diagramme hinzugefügt: Feature/Hotfix-Workflow visuell dargestellt
+    - Fokus vollständig beibehalten: Strategische Rationale und "Warum"-Fokus erhalten
+    - Keine Informationsverluste: Alle wichtigen Entscheidungen dokumentiert
+
+**Eliminierte Redundanzen:**
+1. Branch-Naming-Konventionen (war in beiden vollständig beschrieben)
+2. Merge-Prozess-Details (operative Details in git-workflow.md, strategische Rationale in branch-strategie.md)
+3. Test-Requirements und Beispiele (Pflicht in git-workflow.md, Strategie in branch-strategie.md)
+4. Code-Review-Prozess-Beschreibungen (operativ vs. strategisch getrennt)
+5. Branch-Lebenszyklus-Details (praktische Schritte vs. strategische Überlegungen)
+6. Konfliktlösungs-Strategien (How-to vs. Why aufgeteilt)
+7. Git-Hooks und Automatisierung (Implementierung vs. Architektur-Entscheidung)
+8. Versionierungs-Beispiele (tägliche Anwendung vs. SemVer-Strategie)
+
+**Klare Aufgabentrennung:**
+- **git-workflow.md (OPERATIONS):** Tagesgeschäft - praktische Workflows, Checklisten, Merge-Prozess, Issue-Closing
+- **branch-strategie.md (STRATEGY):** Konzept - Branch-Modell-Begründung, Versionierung, Release-Strategie, Skalierung
+
+**Gesamt-Reduktion:** 1590 → 1092 → 890 Zeilen (-700 Zeilen, -44%)
+
+**Grund:**
+- Issue #19 identifizierte signifikante inhaltliche Überschneidungen
+- Beide Dokumente waren zu groß (>500 Zeilen Zielbereich überschritten)
+- Fehlende klare Aufgabentrennung führte zu Duplikation
+
+**Issue:** #19
+
+**Dateien geändert:**
+- docs/operations/git-workflow.md (überarbeitet, fokussiert auf operative Workflows)
+- docs/strategies/branch-strategie.md (überarbeitet, fokussiert auf strategische Architektur)
+- docs/README.md (Referenzen korrigiert und erweitert)
+
+**Hinweis:** Keine Informationen verloren - alle Inhalte wurden sinnvoll zwischen Operations und Strategy aufgeteilt.
+
+---
+
+## 2026-04-12 - Aufteilung issue-guidelines.md (Issue #19)
+
+**Änderungen:**
+- issue-guidelines.md: Aufgeteilt in 3 wartbare Dokumente (947 → 3×~250-350 Zeilen)
+  - issue-guidelines.md (~280 Zeilen) - Kernkonzepte & Prozesse
+  - issue-acceptance-criteria.md (~330 Zeilen) - AC-Framework & Best Practices - **NEU**
+  - issue-examples.md (~600 Zeilen) - Templates & vollständige Beispiele - **NEU**
+- Cross-Referenzen in allen drei Dokumenten eingefügt
+- Referenzen in anderen Dokumenten aktualisiert
+
+**Grund:**
+- Original-Dokument war mit 947 Zeilen zu groß und schwer wartbar
+- Ziel: 100-500 Zeilen pro Dokument für bessere Lesbarkeit
+- Logische Trennung: Konzepte / AC-Framework / Beispiele
+
+**Issue:** #19
+
+**Dateien erstellt:**
+- docs/operations/issue-acceptance-criteria.md
+- docs/operations/issue-examples.md
+
+**Dateien geändert:**
+- docs/operations/issue-guidelines.md (überarbeitet)
+- docs/operations/feature-workflow.md
+- docs/operations/QUICK-START-ISSUE-1.md
+- docs/operations/github-projects-setup.md
+- docs/operations/phase1-checklist.md
+- docs/project/PROJECT-RULES.md
+
+**Hinweis:** Alle Inhalte aus dem Original wurden erhalten. Keine Informationen gingen verloren.
+
+---
+
+## 2026-04-12 - Bereinigung todo.md-Referenzen (Issue #19)
+
+**Änderungen:**
+- Priorität 1 (Hauptdokumente): PROJECT-RULES.md, README.md, git-workflow.md, branch-strategie.md, QS-STRATEGY-SUMMARY.md
+- Verbleibende Dokumente: Alle todo.md-Referenzen durch GitHub Issues-Referenzen ersetzt
+- Migration zu GitHub Issues-basiertem Task Management vollständig abgeschlossen
+
+**Issue:** #19
+
+**Dateien geändert (Priorität 1):**
+- docs/project/PROJECT-RULES.md
+- docs/README.md
+- docs/strategies/QS-STRATEGY-SUMMARY.md
+- docs/operations/git-workflow.md
+- docs/strategies/branch-strategie.md
+
+**Dateien geändert (verbleibende):**
+- docs/concepts/qs-vps-konzept.md
+- docs/strategies/qs-implementierungsplan-final.md
+- docs/operations/git-workflow.md (weitere Referenzen)
+- docs/operations/documentation-governance.md
+
+**Hinweis:** Historische Dokumente in `docs/archive/` wurden absichtlich NICHT geändert, um die historische Integrität zu bewahren.
+
+---
+
 ## 2026-04-11 - Große Dokumentations-Konsolidierung v1.0 ✅
 
 **Status:** ✅ ABGESCHLOSSEN

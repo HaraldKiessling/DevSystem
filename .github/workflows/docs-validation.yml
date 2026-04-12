@@ -1,190 +1,36 @@
 name: Documentation Validation
 
 on:
-  # Trigger bei Pull Requests nach main
   pull_request:
-    branches: [main]
     paths:
       - 'docs/**'
-      - 'scripts/**'
-      - 'CHANGELOG.md'
-      - '.github/workflows/**'
-  
-  # Trigger bei Push nach main
   push:
-    branches: [main]
+    branches:
+      - main
     paths:
       - 'docs/**'
-      - 'scripts/**'
-      - 'CHANGELOG.md'
-  
-  # Tägliche Ausführung um 08:00 UTC
-  schedule:
-    - cron: '0 8 * * *'
-  
-  # Manueller Trigger
-  workflow_dispatch:
 
 jobs:
-  validate-documentation:
-    name: Validate Documentation Sync
+  validate-docs:
     runs-on: ubuntu-latest
+    name: Validate Documentation Rules
     
     steps:
-      - name: Checkout Repository
+      - name: Checkout
         uses: actions/checkout@v4
+      
+      - name: Validate docs structure
+        run: |
+          chmod +x scripts/docs/validate-docs.sh
+          ./scripts/docs/validate-docs.sh
+      
+      - name: Check for broken links
+        uses: gaurav-nelson/github-action-markdown-link-check@v1
         with:
-          fetch-depth: 0  # Volle Historie für Vergleiche
-      
-      - name: Check Task Management Migration
-        id: task-management-check
-        run: |
-          echo "## 📋 Task Management Check" >> $GITHUB_STEP_SUMMARY
+          config-file: '.github/markdown-link-check-config.json'
+          use-quiet-mode: 'yes'
           
-          # Prüfe ob alte Dateien noch existieren (sollten gelöscht sein)
-          if [ -f "docs/project/todo.md" ] || [ -f "STATUS.md" ]; then
-            echo "❌ **ERROR:** Obsolete Task-Management-Dateien gefunden" >> $GITHUB_STEP_SUMMARY
-            echo "- Diese Dateien sollten nach Migration zu GitHub gelöscht sein" >> $GITHUB_STEP_SUMMARY
-            echo "status=error" >> $GITHUB_OUTPUT
-            exit 1
-          else
-            echo "✅ **OK:** Migration zu GitHub Issues/Projects abgeschlossen" >> $GITHUB_STEP_SUMMARY
-            echo "- Task-Management erfolgt über GitHub Issues" >> $GITHUB_STEP_SUMMARY
-            echo "- Keine obsoleten Dateien vorhanden" >> $GITHUB_STEP_SUMMARY
-            echo "status=ok" >> $GITHUB_OUTPUT
-          fi
-      
-      - name: Check Branch References in Documentation
-        id: branch-check
-        continue-on-error: true
-        run: |
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## 🔀 Branch Reference Check" >> $GITHUB_STEP_SUMMARY
-          
-          # Hole alle Remote-Branches
-          git fetch --all
-          BRANCHES=$(git branch -r | grep -v 'HEAD' | sed 's/origin\///' | grep -v '^main$' || echo "")
-          
-          if [ -z "$BRANCHES" ]; then
-            echo "✅ **OK:** Keine Feature-Branches gefunden" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "- **Aktive Branches:** $(echo "$BRANCHES" | wc -l)" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            
-            FOUND_REFS=0
-            while IFS= read -r branch; do
-              branch=$(echo "$branch" | xargs)  # Trim whitespace
-              if [ -n "$branch" ]; then
-                if grep -rq "$branch" docs/ 2>/dev/null; then
-                  echo "⚠️ Branch \`$branch\` gefunden in Dokumentation" >> $GITHUB_STEP_SUMMARY
-                  grep -rl "$branch" docs/ | sed 's/^/  - /' >> $GITHUB_STEP_SUMMARY
-                  FOUND_REFS=$((FOUND_REFS + 1))
-                fi
-              fi
-            done <<< "$BRANCHES"
-            
-            if [ $FOUND_REFS -eq 0 ]; then
-              echo "✅ **OK:** Keine Branch-Referenzen in Dokumentation" >> $GITHUB_STEP_SUMMARY
-            else
-              echo "" >> $GITHUB_STEP_SUMMARY
-              echo "⚠️ **WARNING:** $FOUND_REFS Branch-Referenz(en) gefunden" >> $GITHUB_STEP_SUMMARY
-            fi
-          fi
-      
-      - name: Check CHANGELOG Updates (on PR)
-        if: github.event_name == 'pull_request'
-        id: changelog-check
-        continue-on-error: true
-        run: |
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## 📝 CHANGELOG Update Check" >> $GITHUB_STEP_SUMMARY
-          
-          # Prüfe ob CHANGELOG in PR geändert wurde
-          CHANGELOG_CHANGED=$(git diff origin/main...HEAD --name-only | grep -c "CHANGELOG.md" || echo "0")
-          
-          # Prüfe ob Code geändert wurde
-          CODE_CHANGED=$(git diff origin/main...HEAD --name-only | grep -cE "^scripts/|^\.github/" || echo "0")
-          
-          echo "- **CHANGELOG geändert:** $CHANGELOG_CHANGED" >> $GITHUB_STEP_SUMMARY
-          echo "- **Code-Dateien geändert:** $CODE_CHANGED" >> $GITHUB_STEP_SUMMARY
-          
-          if [ "$CODE_CHANGED" -gt 0 ] && [ "$CHANGELOG_CHANGED" -eq 0 ]; then
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "⚠️ **WARNING:** Code wurde geändert aber CHANGELOG.md nicht aktualisiert" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "✅ **OK:** CHANGELOG Anforderungen erfüllt" >> $GITHUB_STEP_SUMMARY
-          fi
-      
-      - name: Check for Broken Links
-        id: link-check
-        continue-on-error: true
-        run: |
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## 🔗 Broken Links Check" >> $GITHUB_STEP_SUMMARY
-          
-          # Finde alle Markdown-Dateien
-          BROKEN_LINKS=0
-          
-          find docs/ -name "*.md" -type f | while read -r file; do
-            # Extrahiere relative Markdown-Links
-            grep -oP '\[.*?\]\(\K[^)]+(?=\))' "$file" | while read -r link; do
-              # Ignoriere externe Links
-              if [[ "$link" =~ ^https?:// ]]; then
-                continue
-              fi
-              
-              # Berechne absoluten Pfad
-              DIR=$(dirname "$file")
-              TARGET="$DIR/$link"
-              
-              # Entferne Anker (#section)
-              TARGET="${TARGET%%#*}"
-              
-              # Prüfe ob Datei existiert
-              if [ ! -f "$TARGET" ] && [ ! -d "$TARGET" ]; then
-                echo "⚠️ Broken link in \`$file\`: \`$link\`" >> $GITHUB_STEP_SUMMARY
-                BROKEN_LINKS=$((BROKEN_LINKS + 1))
-              fi
-            done
-          done
-          
-          if [ $BROKEN_LINKS -eq 0 ]; then
-            echo "✅ **OK:** Keine broken Links gefunden" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "⚠️ **WARNING:** $BROKEN_LINKS broken Link(s) gefunden" >> $GITHUB_STEP_SUMMARY
-          fi
-      
-      - name: Generate Documentation Health Report
-        if: always()
-        run: |
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## 📊 Documentation Health Score" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          
-          # Zähle Dokumentations-Dateien
-          TOTAL_DOCS=$(find docs/ -name "*.md" -type f | wc -l)
-          ARCHIVE_DOCS=$(find docs/archive/ -name "*.md" -type f | wc -l)
-          ACTIVE_DOCS=$((TOTAL_DOCS - ARCHIVE_DOCS))
-          
-          echo "| Metrik | Wert |" >> $GITHUB_STEP_SUMMARY
-          echo "|--------|------|" >> $GITHUB_STEP_SUMMARY
-          echo "| **Gesamt Dokumente** | $TOTAL_DOCS |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Aktive Dokumente** | $ACTIVE_DOCS |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Archivierte Dokumente** | $ARCHIVE_DOCS |" >> $GITHUB_STEP_SUMMARY
-          echo "| **todo.md Status** | ${{ steps.todo-check.outputs.status || 'unknown' }} |" >> $GITHUB_STEP_SUMMARY
-          
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "---" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "📚 **Dokumentations-Sync Framework**" >> $GITHUB_STEP_SUMMARY
-          echo "- [Git Workflow & DoD](../../docs/operations/git-workflow.md)" >> $GITHUB_STEP_SUMMARY
-          echo "- [Root-Cause-Analyse](../../docs/archive/retrospectives/DOCUMENTATION-SYNC-ROOT-CAUSE-ANALYSIS-20260411.md)" >> $GITHUB_STEP_SUMMARY
-          echo "- [Pre-Merge-Check Script](../../scripts/docs/pre-merge-check.sh)" >> $GITHUB_STEP_SUMMARY
-      
-      - name: Fail on Errors
-        if: steps.todo-check.outputs.status == 'error'
-        run: |
-          echo "❌ Kritische Dokumentations-Probleme gefunden!"
-          exit 1
+      - name: Validate markdown syntax
+        uses: DavidAnson/markdownlint-cli2-action@v14
+        with:
+          globs: 'docs/**/*.md'
