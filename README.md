@@ -69,13 +69,13 @@ tailscale ip -4
 
 DevSystem besteht aus folgenden Kernkomponenten:
 
-| Komponente                                              | Zweck                                            | Port          | Status                    |
-| ------------------------------------------------------- | ------------------------------------------------ | ------------- | ------------------------- |
-| **[code-server](https://github.com/coder/code-server)** | Browserbasierte VS Code-Umgebung                 | 8080 (intern) | ✅ Produktiv              |
-| **[Caddy](https://caddyserver.com/)**                   | Reverse Proxy mit automatischem HTTPS            | 9443          | ✅ Produktiv              |
-| **[Tailscale](https://tailscale.com/)**                 | Zero-Trust VPN-Netzwerk                          | -             | ✅ Produktiv              |
-| **[Qdrant](https://qdrant.tech/)**                      | Vector Database für KI-Anwendungen               | 6333/6334     | ✅ Produktiv              |
-| **[Ollama](https://ollama.ai/)**                        | Lokale KI-Model-Inferenz (Embeddings für Qdrant) | 11434         | 🔄 Deployment vorbereitet |
+| Komponente                                              | Zweck                                            | Port          | Status       |
+| ------------------------------------------------------- | ------------------------------------------------ | ------------- | ------------ |
+| **[code-server](https://github.com/coder/code-server)** | Browserbasierte VS Code-Umgebung                 | 8080 (intern) | ✅ Produktiv |
+| **[Caddy](https://caddyserver.com/)**                   | Reverse Proxy mit automatischem HTTPS            | 9443          | ✅ Produktiv |
+| **[Tailscale](https://tailscale.com/)**                 | Zero-Trust VPN-Netzwerk                          | -             | ✅ Produktiv |
+| **[Qdrant](https://qdrant.tech/)**                      | Vector Database für KI-Anwendungen               | 6333/6334     | ✅ Produktiv |
+| **[Ollama](https://ollama.ai/)**                        | Lokale KI-Model-Inferenz + Embeddings für Qdrant | 11434         | ✅ Produktiv |
 
 ### Weitere Komponenten
 
