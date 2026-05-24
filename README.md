@@ -56,6 +56,7 @@ https://[TAILSCALE-VPS-IP]:9443
 ```
 
 Die Tailscale-IP deines VPS findest du mit:
+
 ```bash
 tailscale ip -4
 ```
@@ -68,13 +69,13 @@ tailscale ip -4
 
 DevSystem besteht aus folgenden Kernkomponenten:
 
-| Komponente | Zweck | Port | Status |
-|------------|-------|------|--------|
-| **[code-server](https://github.com/coder/code-server)** | Browserbasierte VS Code-Umgebung | 8080 (intern) | ✅ Produktiv |
-| **[Caddy](https://caddyserver.com/)** | Reverse Proxy mit automatischem HTTPS | 9443 | ✅ Produktiv |
-| **[Tailscale](https://tailscale.com/)** | Zero-Trust VPN-Netzwerk | - | ✅ Produktiv |
-| **[Qdrant](https://qdrant.tech/)** | Vector Database für KI-Anwendungen | 6333/6334 | ✅ Produktiv |
-| **[Ollama](https://ollama.ai/)** | Lokale KI-Model-Inferenz | 11434 | 🚧 Geplant |
+| Komponente                                              | Zweck                                            | Port          | Status                    |
+| ------------------------------------------------------- | ------------------------------------------------ | ------------- | ------------------------- |
+| **[code-server](https://github.com/coder/code-server)** | Browserbasierte VS Code-Umgebung                 | 8080 (intern) | ✅ Produktiv              |
+| **[Caddy](https://caddyserver.com/)**                   | Reverse Proxy mit automatischem HTTPS            | 9443          | ✅ Produktiv              |
+| **[Tailscale](https://tailscale.com/)**                 | Zero-Trust VPN-Netzwerk                          | -             | ✅ Produktiv              |
+| **[Qdrant](https://qdrant.tech/)**                      | Vector Database für KI-Anwendungen               | 6333/6334     | ✅ Produktiv              |
+| **[Ollama](https://ollama.ai/)**                        | Lokale KI-Model-Inferenz (Embeddings für Qdrant) | 11434         | 🔄 Deployment vorbereitet |
 
 ### Weitere Komponenten
 
@@ -105,6 +106,7 @@ docs/
 ```
 
 **Empfohlene Lesereihenfolge:**
+
 1. [docs/concepts/qs-vps-konzept.md](docs/concepts/qs-vps-konzept.md) - QS-System-Übersicht
 2. [docs/deployment/vps-deployment-qdrant-complete.md](docs/deployment/vps-deployment-qdrant-complete.md) - Qdrant-Deployment
 3. [docs/operations/git-workflow.md](docs/operations/git-workflow.md) - Git-Workflow
@@ -140,22 +142,26 @@ Vollständige Übersicht: [docs/README.md](docs/README.md)
 ## 🗺️ Roadmap
 
 ### ✅ Phase 1: Core Infrastructure (Abgeschlossen)
+
 - [x] Tailscale VPN-Integration
 - [x] Caddy Reverse Proxy mit HTTPS
 - [x] code-server Browser-IDE
 - [x] Idempotente Deployment-Scripts
 
 ### ✅ Phase 2: AI Infrastructure (Abgeschlossen)
+
 - [x] Qdrant Vector Database Deployment
 - [x] QS-VPS Test-Environment
 - [x] E2E-Test-Framework
 
 ### 🚧 Phase 3: AI Integration (In Arbeit)
+
 - [ ] Ollama Integration für lokale Modelle
 - [ ] Roo Code MCP-Server
 - [ ] Semantic Code Search via Qdrant
 
 ### 📋 Phase 4: Monitoring & Operations (Geplant)
+
 - [ ] Prometheus/Grafana Monitoring
 - [ ] Automated Backup-System
 - [ ] Multi-VPS Orchestration
@@ -172,6 +178,7 @@ Wir freuen uns über Contributions! Bitte lies zunächst [CONTRIBUTING.md](CONTR
 - PR-Submission-Prozess
 
 **Wichtige Regeln:**
+
 - Feature-Branches für alle Entwicklungen
 - Merge in `main` nur nach erfolgreichem E2E-Test (siehe `/scripts/e2e-tests/`)
 - Konzept-Dokumente dürfen direkt in `main` committed werden

@@ -1,0 +1,250 @@
+name: Deploy Ollama (Prod-VPS)
+
+on:
+  workflow_dispatch:
+    inputs:
+      deployment_mode:
+        description: "Deployment Mode"
+        required: true
+        default: "normal"
+        type: choice
+        options:
+          - normal
+          - force
+          - dry-run
+      pull_optional_model:
+        description: "Optionales Modell mxbai-embed-large auch installieren?"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+
+  push:
+    branches:
+      - main
+    paths:
+      - "scripts/prod/install-ollama-prod.sh"
+      - ".github/workflows/deploy-ollama-prod.yml"
+
+jobs:
+  deploy-ollama:
+    name: Deploy Ollama auf Produktions-VPS
+    runs-on: ubuntu-latest
+
+    steps:
+      # -----------------------------------------------------------------------
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # -----------------------------------------------------------------------
+      - name: Setup Tailscale (OAuth)
+        id: tailscale_oauth
+        continue-on-error: true
+        uses: tailscale/github-action@v2
+        with:
+          oauth-client-id: ${{ secrets.TAILSCALE_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TAILSCALE_OAUTH_SECRET }}
+          tags: tag:ci
+
+      - name: Setup Tailscale (Auth Key Fallback)
+        id: tailscale_authkey
+        if: steps.tailscale_oauth.outcome != 'success'
+        continue-on-error: true
+        uses: tailscale/github-action@v2
+        with:
+          authkey: ${{ secrets.TAILSCALE_AUTH_KEY }}
+          tags: tag:ci
+
+      - name: Tailscale Fehler abbrechen
+        if: steps.tailscale_oauth.outcome == 'failure' && steps.tailscale_authkey.outcome == 'failure'
+        run: |
+          echo "::error::Tailscale-Authentifizierung fehlgeschlagen. Deployment abgebrochen."
+          echo "## ⚠️ Tailscale nicht verfügbar" >> $GITHUB_STEP_SUMMARY
+          echo "Secrets prüfen: TAILSCALE_OAUTH_CLIENT_ID / TAILSCALE_OAUTH_SECRET" >> $GITHUB_STEP_SUMMARY
+          exit 1
+
+      # -----------------------------------------------------------------------
+      - name: SSH Key einrichten (Prod-VPS)
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PROD_VPS_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.PROD_VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+          echo "SSH Key eingerichtet für: ${{ secrets.PROD_VPS_HOST }}"
+
+      # -----------------------------------------------------------------------
+      - name: SSH-Verbindung testen
+        run: |
+          ssh -i ~/.ssh/id_ed25519 \
+            -o StrictHostKeyChecking=no \
+            -o ConnectTimeout=15 \
+            ${{ secrets.PROD_VPS_USER }}@${{ secrets.PROD_VPS_HOST }} \
+            "echo '✓ SSH-Verbindung zum Produktions-VPS erfolgreich' && uname -a"
+
+      # -----------------------------------------------------------------------
+      - name: VPS-Ressourcen prüfen
+        id: vps_check
+        run: |
+          echo "### VPS-Ressourcen" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          RESOURCES=$(ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
+            ${{ secrets.PROD_VPS_USER }}@${{ secrets.PROD_VPS_HOST }} \
+            "echo 'RAM:' && free -h | grep Mem && echo 'DISK:' && df -h / | tail -1 && echo 'CPU:' && nproc")
+
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "$RESOURCES" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+          # RAM-Check: Mindestens 1.5 GB frei
+          FREE_RAM_KB=$(ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
+            ${{ secrets.PROD_VPS_USER }}@${{ secrets.PROD_VPS_HOST }} \
+            "grep MemAvailable /proc/meminfo | awk '{print \$2}'")
+
+          if [ "$FREE_RAM_KB" -lt 1572864 ]; then
+            echo "::error::Zu wenig freier RAM (< 1.5 GB). Ollama benötigt mindestens 1.5 GB."
+            exit 1
+          fi
+          echo "✓ RAM-Check bestanden: $((FREE_RAM_KB / 1024)) MB verfügbar"
+
+      # -----------------------------------------------------------------------
+      - name: Script auf Prod-VPS kopieren
+        run: |
+          rsync -avz \
+            -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no" \
+            scripts/prod/install-ollama-prod.sh \
+            ${{ secrets.PROD_VPS_USER }}@${{ secrets.PROD_VPS_HOST }}:/root/install-ollama-prod.sh
+
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
+            ${{ secrets.PROD_VPS_USER }}@${{ secrets.PROD_VPS_HOST }} \
+            "chmod +x /root/install-ollama-prod.sh"
+
+      # -----------------------------------------------------------------------
+      - name: Ollama installieren
+        run: |
+          MODE="${{ github.event.inputs.deployment_mode || 'normal' }}"
+          SCRIPT_FLAGS=""
+
+          if [ "$MODE" = "force" ]; then
+            SCRIPT_FLAGS="--force"
+            echo "Modus: Force-Reinstallation"
+          elif [ "$MODE" = "dry-run" ]; then
+            SCRIPT_FLAGS="--dry-run"
+            echo "Modus: Dry-Run (keine Änderungen)"
+          else
+            echo "Modus: Normal"
+          fi
+
+          echo "### Deployment-Log" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
+            -o ServerAliveInterval=30 \
+            -o ServerAliveCountMax=10 \
+            ${{ secrets.PROD_VPS_USER }}@${{ secrets.PROD_VPS_HOST }} \
+            "bash /root/install-ollama-prod.sh $SCRIPT_FLAGS 2>&1" | tee /tmp/install-log.txt
+
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          cat /tmp/install-log.txt >> $GITHUB_STEP_SUMMARY
+
+      # -----------------------------------------------------------------------
+      - name: Services validieren
+        if: github.event.inputs.deployment_mode != 'dry-run'
+        run: |
+          echo "### Service-Status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Ollama Service-Status
+          OLLAMA_STATUS=$(ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
+            ${{ secrets.PROD_VPS_USER }}@${{ secrets.PROD_VPS_HOST }} \
+            "systemctl is-active ollama 2>/dev/null || echo 'inactive'")
+
+          # Qdrant Service-Status
+          QDRANT_STATUS=$(ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
+            ${{ secrets.PROD_VPS_USER }}@${{ secrets.PROD_VPS_HOST }} \
+            "systemctl is-active qdrant 2>/dev/null || echo 'inactive'")
+
+          # Caddy Service-Status
+          CADDY_STATUS=$(ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
+            ${{ secrets.PROD_VPS_USER }}@${{ secrets.PROD_VPS_HOST }} \
+            "systemctl is-active caddy 2>/dev/null || echo 'inactive'")
+
+          echo "| Service | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Ollama  | $OLLAMA_STATUS |" >> $GITHUB_STEP_SUMMARY
+          echo "| Qdrant  | $QDRANT_STATUS |" >> $GITHUB_STEP_SUMMARY
+          echo "| Caddy   | $CADDY_STATUS |" >> $GITHUB_STEP_SUMMARY
+
+          if [ "$OLLAMA_STATUS" != "active" ]; then
+            echo "::error::Ollama Service ist nicht aktiv nach Installation"
+            exit 1
+          fi
+          echo "✓ Ollama Service aktiv"
+
+      # -----------------------------------------------------------------------
+      - name: Embedding-API testen
+        if: github.event.inputs.deployment_mode != 'dry-run'
+        run: |
+          echo "### API-Tests" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Version-Check
+          OLLAMA_VER=$(ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
+            ${{ secrets.PROD_VPS_USER }}@${{ secrets.PROD_VPS_HOST }} \
+            "curl -s http://localhost:11434/api/version 2>/dev/null | grep -o '\"version\":\"[^\"]*\"' | cut -d'\"' -f4 || echo 'unbekannt'")
+          echo "Ollama Version: $OLLAMA_VER" >> $GITHUB_STEP_SUMMARY
+
+          # Modell-Liste
+          MODELS=$(ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
+            ${{ secrets.PROD_VPS_USER }}@${{ secrets.PROD_VPS_HOST }} \
+            "ollama list 2>/dev/null || echo 'keine Modelle'")
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Installierte Modelle:**" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "$MODELS" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+          # Embedding-Test mit nomic-embed-text
+          EMBED_TEST=$(ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
+            ${{ secrets.PROD_VPS_USER }}@${{ secrets.PROD_VPS_HOST }} \
+            "curl -s -X POST http://localhost:11434/api/embeddings \
+              -H 'Content-Type: application/json' \
+              -d '{\"model\":\"nomic-embed-text\",\"prompt\":\"Qdrant Embedding Test\"}' \
+              2>/dev/null | grep -c 'embedding' || echo '0'")
+
+          if [ "$EMBED_TEST" -gt 0 ]; then
+            echo "✓ Embedding-API: funktioniert" >> $GITHUB_STEP_SUMMARY
+            echo "✓ nomic-embed-text Embedding-Test erfolgreich"
+          else
+            echo "⚠️ Embedding-API: Test fehlgeschlagen" >> $GITHUB_STEP_SUMMARY
+            echo "::warning::Embedding-Test fehlgeschlagen - Modell möglicherweise noch nicht geladen"
+          fi
+
+      # -----------------------------------------------------------------------
+      - name: Deployment-Zusammenfassung
+        if: always()
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "## 📋 Deployment-Info" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Eigenschaft | Wert |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------------|------|" >> $GITHUB_STEP_SUMMARY
+          echo "| VPS | devsystem-vps (Produktions-VPS) |" >> $GITHUB_STEP_SUMMARY
+          echo "| Tailscale-IP | 100.100.221.56 |" >> $GITHUB_STEP_SUMMARY
+          echo "| Ollama Port | 11434 (localhost only) |" >> $GITHUB_STEP_SUMMARY
+          echo "| Primäres Modell | nomic-embed-text (Embeddings) |" >> $GITHUB_STEP_SUMMARY
+          echo "| Caddy-Domain | ollama.devsystem.internal |" >> $GITHUB_STEP_SUMMARY
+          echo "| Deployment-Modus | ${{ github.event.inputs.deployment_mode || 'normal (auto)' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Trigger | ${{ github.event_name }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Zeitstempel | $(date -u '+%Y-%m-%d %H:%M:%S UTC') |" >> $GITHUB_STEP_SUMMARY
+
+      # -----------------------------------------------------------------------
+      - name: Cleanup
+        if: always()
+        run: |
+          rm -f ~/.ssh/id_ed25519
+          echo "SSH-Key bereinigt"
