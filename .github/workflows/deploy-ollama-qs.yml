@@ -150,12 +150,10 @@ jobs:
           github.event.inputs.mode != 'cleanup-only'
         timeout-minutes: 20
         run: |
-          # Prüfen ob Modell bereits vorhanden
-          MODEL_EXISTS=$(ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
+          # Prüfen ob Modell bereits vorhanden (grep -q vermeidet Integer-Parsing-Bug)
+          if ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
             ${{ secrets.QS_VPS_USER }}@${{ secrets.QS_VPS_HOST }} \
-            "ollama list 2>/dev/null | grep -c 'phi3.5' || echo '0'")
-
-          if [ "$MODEL_EXISTS" -gt 0 ]; then
+            "ollama list 2>/dev/null | grep -q 'phi3.5'"; then
             echo "✅ phi3.5:3.8b bereits installiert - kein Download nötig" >> $GITHUB_STEP_SUMMARY
             exit 0
           fi
@@ -163,8 +161,8 @@ jobs:
           echo "📥 Starte Download phi3.5:3.8b (~2.2 GB)..." >> $GITHUB_STEP_SUMMARY
           echo "⏱️ Timeout: 20 Minuten" >> $GITHUB_STEP_SUMMARY
 
-          # ssh -t erzeugt pseudo-TTY → ollama pull CLI funktioniert korrekt
-          ssh -t -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
+          # ssh -tt (force pseudo-TTY) umgeht "stdin is not a terminal"
+          ssh -tt -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
             ${{ secrets.QS_VPS_USER }}@${{ secrets.QS_VPS_HOST }} \
             "ollama pull phi3.5:3.8b"
 
