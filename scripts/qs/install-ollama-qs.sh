@@ -449,7 +449,7 @@ ollama.devsystem-qs.internal {
     log_info "Caddy-Konfiguration geschrieben: $CADDY_OLLAMA_CONF"
 
     if caddy validate --config /etc/caddy/Caddyfile &>/dev/null 2>&1; then
-      systemctl reload caddy
+      systemctl reload caddy || log_warn "Caddy reload fehlgeschlagen (non-fatal)"
       log_info "Caddy neu geladen ✓"
     else
       log_warn "Caddy-Validierung fehlgeschlagen - manuelle Prüfung erforderlich"
