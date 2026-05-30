@@ -1,0 +1,222 @@
+name: Deploy Ollama (QS-VPS) - phi3.5:3.8b
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Deployment-Modus"
+        required: true
+        default: "install"
+        type: choice
+        options:
+          - install # Vollinstallation (idempotent)
+          - force # Neuinstallation erzwingen
+          - dry-run # Nur prüfen, nichts installieren
+          - cleanup-only # Nur alte Modelle löschen
+          - validate # Nur Validierung (kein Install)
+
+  push:
+    branches:
+      - main
+    paths:
+      - "scripts/qs/install-ollama-qs.sh"
+      - ".github/workflows/deploy-ollama-qs.yml"
+
+jobs:
+  deploy-ollama-qs:
+    name: "Ollama phi3.5:3.8b → QS-VPS"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      # -----------------------------------------------------------------------
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # -----------------------------------------------------------------------
+      - name: Setup Tailscale (OAuth)
+        id: tailscale_oauth
+        continue-on-error: true
+        uses: tailscale/github-action@v2
+        with:
+          oauth-client-id: ${{ secrets.TAILSCALE_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TAILSCALE_OAUTH_SECRET }}
+          tags: tag:ci
+
+      - name: Setup Tailscale (Auth Key Fallback)
+        id: tailscale_authkey
+        if: steps.tailscale_oauth.outcome != 'success'
+        continue-on-error: true
+        uses: tailscale/github-action@v2
+        with:
+          authkey: ${{ secrets.TAILSCALE_AUTH_KEY }}
+          tags: tag:ci
+
+      - name: Tailscale Status prüfen
+        if: steps.tailscale_oauth.outcome == 'failure' && steps.tailscale_authkey.outcome == 'failure'
+        run: |
+          echo "⚠️ Tailscale setup fehlgeschlagen - QS-VPS nicht erreichbar" >> $GITHUB_STEP_SUMMARY
+          echo "::error::Tailscale Authentifizierung fehlgeschlagen."
+          echo "Lösung: ./scripts/setup-tailscale-github-auth.sh"
+          exit 1
+
+      # -----------------------------------------------------------------------
+      - name: SSH Key einrichten
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.QS_VPS_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.QS_VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: SSH-Verbindung testen
+        run: |
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
+            ${{ secrets.QS_VPS_USER }}@${{ secrets.QS_VPS_HOST }} \
+            "echo '✓ SSH-Verbindung erfolgreich'"
+
+      # -----------------------------------------------------------------------
+      - name: "Schritt 1: Memory-Check auf QS-VPS"
+        id: memory_check
+        run: |
+          echo "### 🔍 Memory-Check QS-VPS" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          MEM_INFO=$(ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
+            ${{ secrets.QS_VPS_USER }}@${{ secrets.QS_VPS_HOST }} \
+            "echo '**RAM:**'; free -h; echo ''; echo '**Disk:**'; df -h /; echo ''; echo '**Ollama-Modelle:**'; command -v ollama &>/dev/null && ollama list 2>/dev/null || echo 'Ollama nicht installiert'")
+
+          echo "$MEM_INFO" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Freien RAM prüfen (Minimum 4 GB)
+          FREE_RAM_KB=$(ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
+            ${{ secrets.QS_VPS_USER }}@${{ secrets.QS_VPS_HOST }} \
+            "grep MemAvailable /proc/meminfo | awk '{print \$2}'")
+          FREE_RAM_GB=$(echo "scale=1; $FREE_RAM_KB / 1024 / 1024" | bc)
+
+          echo "Freier RAM: ${FREE_RAM_GB} GB" >> $GITHUB_STEP_SUMMARY
+
+          if (( $(echo "$FREE_RAM_GB < 4" | bc -l) )); then
+            echo "::error::Zu wenig RAM (${FREE_RAM_GB} GB frei). Minimum: 4 GB. Bitte cleanup-only Modus verwenden."
+            echo "⚠️ **WARNUNG: Zu wenig RAM (${FREE_RAM_GB} GB)!**" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          elif (( $(echo "$FREE_RAM_GB < 6" | bc -l) )); then
+            echo "::warning::Wenig RAM (${FREE_RAM_GB} GB). Cleanup wird durchgeführt."
+            echo "⚠️ Wenig RAM (${FREE_RAM_GB} GB) - Cleanup wird durchgeführt" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ RAM ausreichend: ${FREE_RAM_GB} GB frei" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      # -----------------------------------------------------------------------
+      - name: Script auf QS-VPS übertragen
+        run: |
+          scp -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
+            scripts/qs/install-ollama-qs.sh \
+            ${{ secrets.QS_VPS_USER }}@${{ secrets.QS_VPS_HOST }}:/tmp/install-ollama-qs.sh
+
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
+            ${{ secrets.QS_VPS_USER }}@${{ secrets.QS_VPS_HOST }} \
+            "chmod +x /tmp/install-ollama-qs.sh"
+
+      # -----------------------------------------------------------------------
+      - name: "Schritt 2: Ollama installieren + phi3.5:3.8b pullen"
+        id: install
+        if: github.event.inputs.mode != 'validate'
+        timeout-minutes: 25
+        run: |
+          MODE="${{ github.event.inputs.mode || 'install' }}"
+
+          # Flags zusammenbauen
+          FLAGS=""
+          case "$MODE" in
+            force)        FLAGS="--force" ;;
+            dry-run)      FLAGS="--dry-run" ;;
+            cleanup-only) FLAGS="--cleanup-only" ;;
+            install|"")   FLAGS="" ;;
+          esac
+
+          echo "### 🚀 Deployment: Ollama phi3.5:3.8b" >> $GITHUB_STEP_SUMMARY
+          echo "Modus: \`$MODE\` | Flags: \`${FLAGS:-keine}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
+            ${{ secrets.QS_VPS_USER }}@${{ secrets.QS_VPS_HOST }} \
+            "bash /tmp/install-ollama-qs.sh $FLAGS"
+
+      # -----------------------------------------------------------------------
+      - name: "Schritt 3: Validierung"
+        id: validate
+        if: github.event.inputs.mode != 'dry-run' && github.event.inputs.mode != 'cleanup-only'
+        run: |
+          echo "### ✅ Validierung" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Service-Status
+          OLLAMA_STATUS=$(ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
+            ${{ secrets.QS_VPS_USER }}@${{ secrets.QS_VPS_HOST }} \
+            "systemctl is-active ollama 2>/dev/null || echo 'inactive'")
+
+          # API-Check
+          API_OK=$(ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
+            ${{ secrets.QS_VPS_USER }}@${{ secrets.QS_VPS_HOST }} \
+            "curl -s http://127.0.0.1:11434/api/version 2>/dev/null | grep -c 'version' || echo '0'")
+
+          # Modell-Check
+          MODEL_OK=$(ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
+            ${{ secrets.QS_VPS_USER }}@${{ secrets.QS_VPS_HOST }} \
+            "ollama list 2>/dev/null | grep -c 'phi3.5' || echo '0'")
+
+          # RAM nach Installation
+          FREE_RAM_AFTER=$(ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
+            ${{ secrets.QS_VPS_USER }}@${{ secrets.QS_VPS_HOST }} \
+            "grep MemAvailable /proc/meminfo | awk '{printf \"%.1f\", \$2/1024/1024}'")
+
+          # Summary-Tabelle
+          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Ollama Service | $OLLAMA_STATUS |" >> $GITHUB_STEP_SUMMARY
+          echo "| API erreichbar | $([ "$API_OK" -gt 0 ] && echo '✅ ja' || echo '❌ nein') |" >> $GITHUB_STEP_SUMMARY
+          echo "| phi3.5:3.8b installiert | $([ "$MODEL_OK" -gt 0 ] && echo '✅ ja' || echo '❌ nein') |" >> $GITHUB_STEP_SUMMARY
+          echo "| RAM nach Install | ${FREE_RAM_AFTER} GB frei |" >> $GITHUB_STEP_SUMMARY
+
+          # Fehler-Auswertung
+          ERRORS=0
+          if [ "$OLLAMA_STATUS" != "active" ]; then
+            echo "::error::Ollama Service nicht aktiv: $OLLAMA_STATUS"
+            ((ERRORS++))
+          fi
+          if [ "$API_OK" -eq 0 ]; then
+            echo "::error::Ollama API nicht erreichbar"
+            ((ERRORS++))
+          fi
+          if [ "$MODEL_OK" -eq 0 ]; then
+            echo "::error::phi3.5:3.8b nicht installiert"
+            ((ERRORS++))
+          fi
+
+          if [ "$ERRORS" -gt 0 ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "❌ **$ERRORS Validierung(en) fehlgeschlagen**" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Alle Validierungen bestanden**" >> $GITHUB_STEP_SUMMARY
+
+      # -----------------------------------------------------------------------
+      - name: "Schritt 4: Modell-Liste anzeigen"
+        if: always() && github.event.inputs.mode != 'dry-run'
+        run: |
+          echo "### 📋 Installierte Modelle" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
+            ${{ secrets.QS_VPS_USER }}@${{ secrets.QS_VPS_HOST }} \
+            "ollama list 2>/dev/null || echo 'Ollama nicht verfügbar'" >> $GITHUB_STEP_SUMMARY || true
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      # -----------------------------------------------------------------------
+      - name: Cleanup SSH Key
+        if: always()
+        run: |
+          rm -f ~/.ssh/id_ed25519
