@@ -164,11 +164,10 @@ jobs:
           # REST API Pull via curl (kein TTY nötig - funktioniert in jeder Umgebung)
           PULL_RESULT=$(ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
             ${{ secrets.QS_VPS_USER }}@${{ secrets.QS_VPS_HOST }} \
-            "curl -sf --no-buffer --max-time 1200 \
+            "curl -sS --no-buffer --max-time 1200 --connect-timeout 30 \
               -X POST http://127.0.0.1:11434/api/pull \
               -H 'Content-Type: application/json' \
-              -d '{\"name\":\"phi3.5:3.8b\"}' \
-              | tail -1 2>&1")
+              -d '{\"name\":\"phi3.5:3.8b\"}' 2>&1 | tail -1")
 
           echo "Letzte API-Antwort: $PULL_RESULT" >> $GITHUB_STEP_SUMMARY
 
