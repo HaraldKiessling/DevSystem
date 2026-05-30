@@ -119,14 +119,13 @@ jobs:
             "chmod +x /tmp/install-ollama-qs.sh"
 
       # -----------------------------------------------------------------------
-      - name: "Schritt 2: Ollama installieren + phi3.5:3.8b pullen"
+      - name: "Schritt 2a: Ollama installieren + Service konfigurieren"
         id: install
         if: github.event.inputs.mode != 'validate'
-        timeout-minutes: 25
+        timeout-minutes: 5
         run: |
           MODE="${{ github.event.inputs.mode || 'install' }}"
 
-          # Flags zusammenbauen
           FLAGS=""
           case "$MODE" in
             force)        FLAGS="--force" ;;
@@ -142,6 +141,34 @@ jobs:
           ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
             ${{ secrets.QS_VPS_USER }}@${{ secrets.QS_VPS_HOST }} \
             "bash /tmp/install-ollama-qs.sh $FLAGS"
+
+      - name: "Schritt 2b: phi3.5:3.8b Modell herunterladen"
+        id: pull_model
+        if: |
+          github.event.inputs.mode != 'validate' &&
+          github.event.inputs.mode != 'dry-run' &&
+          github.event.inputs.mode != 'cleanup-only'
+        timeout-minutes: 20
+        run: |
+          # Prüfen ob Modell bereits vorhanden
+          MODEL_EXISTS=$(ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
+            ${{ secrets.QS_VPS_USER }}@${{ secrets.QS_VPS_HOST }} \
+            "ollama list 2>/dev/null | grep -c 'phi3.5' || echo '0'")
+
+          if [ "$MODEL_EXISTS" -gt 0 ]; then
+            echo "✅ phi3.5:3.8b bereits installiert - kein Download nötig" >> $GITHUB_STEP_SUMMARY
+            exit 0
+          fi
+
+          echo "📥 Starte Download phi3.5:3.8b (~2.2 GB)..." >> $GITHUB_STEP_SUMMARY
+          echo "⏱️ Timeout: 20 Minuten" >> $GITHUB_STEP_SUMMARY
+
+          # ssh -t erzeugt pseudo-TTY → ollama pull CLI funktioniert korrekt
+          ssh -t -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
+            ${{ secrets.QS_VPS_USER }}@${{ secrets.QS_VPS_HOST }} \
+            "ollama pull phi3.5:3.8b"
+
+          echo "✅ phi3.5:3.8b heruntergeladen" >> $GITHUB_STEP_SUMMARY
 
       # -----------------------------------------------------------------------
       - name: "Schritt 3: Validierung"

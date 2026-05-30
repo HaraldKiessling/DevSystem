@@ -379,67 +379,19 @@ WantedBy=multi-user.target"
   fi
 }
 
-# --- Modell herunterladen ----------------------------------------------------
+# --- Modell-Status prüfen (Pull erfolgt extern via Workflow) -----------------
 pull_model() {
-  log_section "phi3.5:3.8b herunterladen (~2.2 GB)"
-
-  log_info "Lade $PRIMARY_MODEL..."
-  log_warn "Download kann 5-15 Minuten dauern je nach Verbindung"
+  log_section "phi3.5:3.8b Status prüfen"
 
   if [ "$DRY_RUN" = false ]; then
     if ollama list 2>/dev/null | grep -q "phi3.5"; then
       log_info "$PRIMARY_MODEL bereits vorhanden ✓"
     else
-      # Sicherstellen dass Service läuft
-      if ! systemctl is-active --quiet ollama 2>/dev/null; then
-        systemctl start ollama
-        sleep 5
-      fi
-
-      # ollama pull via REST API statt CLI
-      # Grund: CLI-Version bricht mit "Error: EOF" ab wenn kein echtes TTY
-      # vorhanden ist (z.B. über SSH ohne -t oder in GitHub Actions)
-      log_info "Starte Download via Ollama REST API (TTY-unabhängig)..."
-
-      # Streaming-Pull: Jede JSON-Zeile enthält Status-Update
-      # Wir lesen den Stream und zeigen relevante Status-Meldungen an
-      PULL_SUCCESS=false
-      while IFS= read -r line; do
-        STATUS=$(echo "$line" | grep -o '"status":"[^"]*"' | cut -d'"' -f4 2>/dev/null || true)
-        ERROR=$(echo "$line" | grep -o '"error":"[^"]*"' | cut -d'"' -f4 2>/dev/null || true)
-        if [ -n "$ERROR" ]; then
-          log_error "Pull-Fehler: $ERROR"
-          break
-        fi
-        case "$STATUS" in
-          "pulling manifest")
-            log_info "  → Manifest wird geladen..." ;;
-          pulling*)
-            echo -n "." ;;
-          "verifying sha256 digest")
-            echo ""; log_info "  → Prüfsumme wird verifiziert..." ;;
-          "writing manifest")
-            log_info "  → Manifest wird geschrieben..." ;;
-          "removing any unused layers")
-            log_info "  → Aufräumen..." ;;
-          "success")
-            echo ""; PULL_SUCCESS=true; log_info "  → Download abgeschlossen ✓" ;;
-        esac
-      done < <(curl -s --no-buffer \
-        -X POST "http://${OLLAMA_HOST}:${OLLAMA_PORT}/api/pull" \
-        -H "Content-Type: application/json" \
-        -d "{\"name\":\"${PRIMARY_MODEL}\"}" 2>&1)
-
-      if [ "$PULL_SUCCESS" = true ] || ollama list 2>/dev/null | grep -q "phi3.5"; then
-        log_info "$PRIMARY_MODEL heruntergeladen ✓"
-      else
-        log_error "Download von $PRIMARY_MODEL fehlgeschlagen"
-        log_error "Bitte manuell ausführen: ollama pull $PRIMARY_MODEL"
-        exit 1
-      fi
+      log_info "$PRIMARY_MODEL noch nicht vorhanden - wird nach Script-Ausführung gepullt"
+      log_info "Pull erfolgt direkt via: ollama pull $PRIMARY_MODEL"
     fi
   else
-    echo -e "${YELLOW}[DRY-RUN]${NC} ollama pull $PRIMARY_MODEL (via REST API)"
+    echo -e "${YELLOW}[DRY-RUN]${NC} Würde prüfen: ollama list | grep phi3.5"
   fi
 }
 
