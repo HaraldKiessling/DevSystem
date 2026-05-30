@@ -395,11 +395,51 @@ pull_model() {
         systemctl start ollama
         sleep 5
       fi
-      ollama pull "$PRIMARY_MODEL"
-      log_info "$PRIMARY_MODEL heruntergeladen ✓"
+
+      # ollama pull via REST API statt CLI
+      # Grund: CLI-Version bricht mit "Error: EOF" ab wenn kein echtes TTY
+      # vorhanden ist (z.B. über SSH ohne -t oder in GitHub Actions)
+      log_info "Starte Download via Ollama REST API (TTY-unabhängig)..."
+
+      # Streaming-Pull: Jede JSON-Zeile enthält Status-Update
+      # Wir lesen den Stream und zeigen relevante Status-Meldungen an
+      PULL_SUCCESS=false
+      while IFS= read -r line; do
+        STATUS=$(echo "$line" | grep -o '"status":"[^"]*"' | cut -d'"' -f4 2>/dev/null || true)
+        ERROR=$(echo "$line" | grep -o '"error":"[^"]*"' | cut -d'"' -f4 2>/dev/null || true)
+        if [ -n "$ERROR" ]; then
+          log_error "Pull-Fehler: $ERROR"
+          break
+        fi
+        case "$STATUS" in
+          "pulling manifest")
+            log_info "  → Manifest wird geladen..." ;;
+          pulling*)
+            echo -n "." ;;
+          "verifying sha256 digest")
+            echo ""; log_info "  → Prüfsumme wird verifiziert..." ;;
+          "writing manifest")
+            log_info "  → Manifest wird geschrieben..." ;;
+          "removing any unused layers")
+            log_info "  → Aufräumen..." ;;
+          "success")
+            echo ""; PULL_SUCCESS=true; log_info "  → Download abgeschlossen ✓" ;;
+        esac
+      done < <(curl -s --no-buffer \
+        -X POST "http://${OLLAMA_HOST}:${OLLAMA_PORT}/api/pull" \
+        -H "Content-Type: application/json" \
+        -d "{\"name\":\"${PRIMARY_MODEL}\"}" 2>&1)
+
+      if [ "$PULL_SUCCESS" = true ] || ollama list 2>/dev/null | grep -q "phi3.5"; then
+        log_info "$PRIMARY_MODEL heruntergeladen ✓"
+      else
+        log_error "Download von $PRIMARY_MODEL fehlgeschlagen"
+        log_error "Bitte manuell ausführen: ollama pull $PRIMARY_MODEL"
+        exit 1
+      fi
     fi
   else
-    echo -e "${YELLOW}[DRY-RUN]${NC} ollama pull $PRIMARY_MODEL"
+    echo -e "${YELLOW}[DRY-RUN]${NC} ollama pull $PRIMARY_MODEL (via REST API)"
   fi
 }
 
