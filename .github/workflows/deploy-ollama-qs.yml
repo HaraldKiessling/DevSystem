@@ -161,20 +161,54 @@ jobs:
           echo "📥 Starte Download phi3.5:3.8b (~2.2 GB)..." >> $GITHUB_STEP_SUMMARY
           echo "⏱️ Timeout: 20 Minuten" >> $GITHUB_STEP_SUMMARY
 
-          # 'script' erzeugt pseudo-TTY → ollama pull CLI funktioniert korrekt
+          # REST API Pull via curl auf dem VPS (TTY-unabhängig)
+          # curl läuft auf dem VPS selbst (localhost), nicht via SSH-Streaming
+          # nohup hält den Prozess nach SSH-Disconnect am Leben
           ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
             ${{ secrets.QS_VPS_USER }}@${{ secrets.QS_VPS_HOST }} \
-            "script -q -c 'ollama pull phi3.5:3.8b' /dev/null"
+            "nohup curl -s --no-buffer --max-time 1200 \
+              -X POST http://127.0.0.1:11434/api/pull \
+              -H 'Content-Type: application/json' \
+              -d '{\"name\":\"phi3.5:3.8b\"}' \
+              > /tmp/ollama-pull.log 2>&1 &"
 
-          # Verifizieren dass Modell jetzt vorhanden ist
-          if ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
+          echo "API-Pull gestartet (curl läuft auf VPS), warte auf Abschluss..." >> $GITHUB_STEP_SUMMARY
+
+          # Polling-Loop: maximal 20 Minuten
+          MAX_WAIT=1200
+          WAIT_INTERVAL=15
+          ELAPSED=0
+          while [ $ELAPSED -lt $MAX_WAIT ]; do
+            sleep $WAIT_INTERVAL
+            ELAPSED=$((ELAPSED + WAIT_INTERVAL))
+
+            if ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
+              ${{ secrets.QS_VPS_USER }}@${{ secrets.QS_VPS_HOST }} \
+              "ollama list 2>/dev/null | grep -q 'phi3.5'"; then
+              echo "✅ phi3.5:3.8b heruntergeladen (nach ${ELAPSED}s)" >> $GITHUB_STEP_SUMMARY
+              exit 0
+            fi
+
+            # Prüfen ob curl noch läuft
+            CURL_RUNNING=$(ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
+              ${{ secrets.QS_VPS_USER }}@${{ secrets.QS_VPS_HOST }} \
+              "pgrep -f 'curl.*api/pull' | wc -l" 2>/dev/null || echo "0")
+
+            if [ "$CURL_RUNNING" = "0" ]; then
+              echo "⚠️ curl-Prozess beendet - prüfe Log" >> $GITHUB_STEP_SUMMARY
+              ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
+                ${{ secrets.QS_VPS_USER }}@${{ secrets.QS_VPS_HOST }} \
+                "tail -5 /tmp/ollama-pull.log 2>/dev/null | grep -o '\"status\":\"[^\"]*\"' || echo '(keine status-Zeilen)'" >> $GITHUB_STEP_SUMMARY
+            fi
+
+            echo "  ⏳ Warte... (${ELAPSED}s / ${MAX_WAIT}s)" >> $GITHUB_STEP_SUMMARY
+          done
+
+          echo "❌ Timeout: Modell nach ${MAX_WAIT}s nicht vorhanden" >> $GITHUB_STEP_SUMMARY
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
             ${{ secrets.QS_VPS_USER }}@${{ secrets.QS_VPS_HOST }} \
-            "ollama list 2>/dev/null | grep -q 'phi3.5'"; then
-            echo "✅ phi3.5:3.8b heruntergeladen" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "❌ Modell nach Pull nicht in ollama list gefunden" >> $GITHUB_STEP_SUMMARY
-            exit 1
-          fi
+            "tail -20 /tmp/ollama-pull.log 2>/dev/null || echo '(kein Log)'" >> $GITHUB_STEP_SUMMARY
+          exit 1
 
       # -----------------------------------------------------------------------
       - name: "Schritt 3: Validierung"
