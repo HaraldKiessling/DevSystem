@@ -161,15 +161,10 @@ jobs:
           echo "📥 Starte Download phi3.5:3.8b (~2.2 GB)..." >> $GITHUB_STEP_SUMMARY
           echo "⏱️ Timeout: 20 Minuten" >> $GITHUB_STEP_SUMMARY
 
-          # REST API Pull via curl (kein TTY nötig - funktioniert in jeder Umgebung)
-          PULL_RESULT=$(ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
+          # 'script' erzeugt pseudo-TTY → ollama pull CLI funktioniert korrekt
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
             ${{ secrets.QS_VPS_USER }}@${{ secrets.QS_VPS_HOST }} \
-            "curl -sS --no-buffer --max-time 1200 --connect-timeout 30 \
-              -X POST http://127.0.0.1:11434/api/pull \
-              -H 'Content-Type: application/json' \
-              -d '{\"name\":\"phi3.5:3.8b\"}' 2>&1 | tail -1")
-
-          echo "Letzte API-Antwort: $PULL_RESULT" >> $GITHUB_STEP_SUMMARY
+            "script -q -c 'ollama pull phi3.5:3.8b' /dev/null"
 
           # Verifizieren dass Modell jetzt vorhanden ist
           if ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
