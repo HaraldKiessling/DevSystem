@@ -41,13 +41,15 @@ source "${SCRIPT_DIR}/lib/idempotency.sh"
 # Entweder als Environment-Variable oder durch sed-Ersetzung im Skript
 QS_TAILSCALE_IP="${QS_TAILSCALE_IP:-QS_TAILSCALE_IP}"
 
-# Farbdefinitionen für Terminal-Ausgabe
-readonly RED='\033[0;31m'
-readonly GREEN='\033[0;32m'
-readonly YELLOW='\033[0;33m'
-readonly BLUE='\033[0;34m'
-readonly CYAN='\033[0;36m'
-readonly NC='\033[0m'
+# Farbdefinitionen für Terminal-Ausgabe (nur wenn nicht bereits gesetzt)
+if [ -z "${RED:-}" ]; then
+    readonly RED='\033[0;31m'
+    readonly GREEN='\033[0;32m'
+    readonly YELLOW='\033[0;33m'
+    readonly BLUE='\033[0;34m'
+    readonly CYAN='\033[0;36m'
+    readonly NC='\033[0m'
+fi
 
 # Verzeichnisse und Dateien
 readonly CADDY_DIR="/etc/caddy"

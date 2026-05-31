@@ -39,13 +39,15 @@ source "${SCRIPT_DIR}/lib/idempotency.sh"
 # Optional: API-Key für Authentifizierung (kann leer bleiben für localhost-only)
 QS_QDRANT_API_KEY="QS_QDRANT_API_KEY"
 
-# Farbdefinitionen
-readonly RED='\033[0;31m'
-readonly GREEN='\033[0;32m'
-readonly YELLOW='\033[0;33m'
-readonly BLUE='\033[0;34m'
-readonly CYAN='\033[0;36m'
-readonly NC='\033[0m'
+# Farbdefinitionen (nur wenn nicht bereits gesetzt)
+if [ -z "${RED:-}" ]; then
+    readonly RED='\033[0;31m'
+    readonly GREEN='\033[0;32m'
+    readonly YELLOW='\033[0;33m'
+    readonly BLUE='\033[0;34m'
+    readonly CYAN='\033[0;36m'
+    readonly NC='\033[0m'
+fi
 
 # QS-spezifische Einstellungen
 readonly QS_LOG_FILE="/var/log/qs-deployment.log"

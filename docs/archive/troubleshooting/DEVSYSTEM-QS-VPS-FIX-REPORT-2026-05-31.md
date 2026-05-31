@@ -21,3 +21,9 @@
 
 - Keine Repo-Skripte geändert.
 - Änderungen wurden **nur** auf dem Zielserver vorgenommen (Caddy-Konfiguration).
+
+## Repo-Notiz (lokale Skriptänderungen bereinigt)
+
+- **Status**: Änderungen in `scripts/qs/*` übernommen und committed.
+- **Änderungstyp**: Idempotenz-Fix für Farbcodes (Guard gegen erneute `readonly`-Definition bei mehrfacher Nutzung/Sourcing).
+- **Betroffene Dateien**: `configure-caddy-qs.sh`, `deploy-qdrant-qs.sh`, `install-caddy-qs.sh`, `install-code-server-qs.sh`.
