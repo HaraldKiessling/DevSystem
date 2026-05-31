@@ -107,5 +107,21 @@ ssh root@devsystem-qs-vps "ollama pull qwen2.5-coder:7b && ollama pull qwen2.5:3
 
 - **Ressourcen-Limitierung:** Das Skript `install-ollama-qs.sh` konfiguriert Ollama restriktiv (`MemoryMax=6G`, `OLLAMA_MAX_LOADED_MODELS=1`). Die Zoo-Modi benötigen jedoch potenziell andere Modelle (`qwen2.5-coder:7b`). Es muss sichergestellt werden, dass der QS-VPS (8GB RAM) beim Modellwechsel nicht in OOM (Out of Memory) läuft. Ggf. muss die `ollama.service` Konfiguration auf dem Zielserver angepasst werden, um Modellwechsel flüssiger zu gestalten oder das Memory-Limit leicht anzuheben.
 - **User-Mapping:** Auf dem Quellsystem läuft code-server als `root` (Pfade unter `/root/.local/...`). Auf dem Zielserver wird laut Skript der User `codeserver-qs` verwendet. Die Replikationspfade müssen entsprechend auf `/home/codeserver-qs/...` gemappt werden.
-- **Extension-Installation:** Der Plan deckt die Konfigurationsdateien ab. Die Zoo-Extension selbst muss auf dem Zielserver im code-server installiert sein, bevor die Settings greifen.
+- **Extension-Installation:** Die Zoo-Extension wird über `configure-code-server-qs.sh` idempotent nachinstalliert, falls sie fehlt. Dadurch bleiben die Zoo-Settings nach Deploy/Update verfügbar.
 - **OpenRouter Secret:** Muss manuell nachgepflegt werden, da es nicht dateibasiert repliziert werden kann.
+
+### 3.4 Zoo-Extension Installation (idempotent, QS)
+
+Die Zoo-Extension wird auf dem QS-VPS über das bestehende Konfigurationsskript installiert. Dieses Vorgehen ist idempotent: fehlende Extensions werden nachinstalliert, vorhandene bleiben unverändert.
+
+```bash
+# Als root auf dem QS-VPS
+sudo bash /root/work/DevSystem/scripts/qs/configure-code-server-qs.sh
+
+# Optional: nur Zoo-Extension prüfen/installieren (läuft trotzdem idempotent)
+sudo -u codeserver-qs code-server --list-extensions | grep -q '^zoocodeorganization\.zoo-code$' \
+  || sudo -u codeserver-qs code-server --install-extension zoocodeorganization.zoo-code
+
+# Service neu starten, damit die UI die Extension lädt
+sudo systemctl restart code-server-qs
+```

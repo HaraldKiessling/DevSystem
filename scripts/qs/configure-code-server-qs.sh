@@ -54,6 +54,7 @@ BACKUP_DIR="${BACKUP_DIR_DEFAULT}"
 # QS-spezifische Extensions-Liste
 readonly EXTENSIONS=(
     "saoudrizwan.claude-dev"           # Roo Cline - KI-Steuerung
+    "zoocodeorganization.zoo-code"     # Zoo Code - KI-Steuerung (QS)
     "eamodio.gitlens"                  # GitLens - Git-Integration
     "ms-azuretools.vscode-docker"      # Docker - Container-Management
     "redhat.vscode-yaml"               # YAML - YAML-Support
@@ -456,26 +457,32 @@ install_extensions() {
         log_message "Extension-Installation übersprungen (--no-extensions)."
         return 0
     fi
-    
-    # Prüfe ob Extensions bereits installiert wurden
-    if idempotency::check_marker "code_server_qs_extensions_installed"; then
-        log_success "Extensions wurden bereits installiert (Marker gefunden)."
-        log_message "Nutze --force-redeploy zum erneuten Installieren."
-        return 0
-    fi
-    
+
     log_step "Installiere VS Code Extensions für QS-VPS..."
     
     # Hole Liste der bereits installierten Extensions (pipefail-safe)
     local installed_extensions
     installed_extensions=$(su - "${CODE_SERVER_USER}" -c "code-server --list-extensions" 2>/dev/null || true)
+
+    local missing_extensions=()
+    for ext in "${EXTENSIONS[@]}"; do
+        if ! echo "$installed_extensions" | grep -q "^${ext}$"; then
+            missing_extensions+=("$ext")
+        fi
+    done
+
+    if [ ${#missing_extensions[@]} -eq 0 ]; then
+        log_success "Alle QS-Extensions sind bereits installiert."
+        idempotency::set_marker "code_server_qs_extensions_installed"
+        return 0
+    fi
     
     local installed_count=0
     local skipped_count=0
     local failed_count=0
     local failed_extensions=()
     
-    for ext in "${EXTENSIONS[@]}"; do
+    for ext in "${missing_extensions[@]}"; do
         # Prüfe ob Extension bereits installiert ist
         if echo "$installed_extensions" | grep -q "^${ext}$"; then
             log_success "  ✓ ${ext} bereits installiert (überspringe)"
