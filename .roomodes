@@ -1,0 +1,11 @@
+customModes:
+  - slug: ollama-cloud-general
+    name: OLLAMA Cloud general
+    roleDefinition: einfachster modus
+    whenToUse: wenn kosten bei den Bezahl Provider erschöpft sind und OLLAMA lokal zu leistungsschwach ist
+    groups:
+      - read
+      - edit
+      - command
+      - mcp
+    source: project

@@ -31,6 +31,8 @@ Technische Konzepte für Systemkomponenten:
 - [`qs-vps-konzept.md`](concepts/qs-vps-konzept.md) - QS-VPS-System
 - [`sicherheitskonzept.md`](concepts/sicherheitskonzept.md) - Sicherheitsarchitektur
 - [`ki-integration-konzept.md`](concepts/ki-integration-konzept.md) - KI-Integration (Ollama)
+- [`LLM/concept_llm_usage.md`](LLM/concept_llm_usage.md) - LLM-Nutzungskonzept (Zoo Code Modes, Provider, IaC)
+- [`LLM/setup.md`](LLM/setup.md) - LLM-Setup & lokale Einrichtung
 - [`implementierungsplan.md`](concepts/implementierungsplan.md) - Implementierungs-Roadmap
 
 ### 🚀 Deployment

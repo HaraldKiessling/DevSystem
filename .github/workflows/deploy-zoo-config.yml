@@ -1,0 +1,146 @@
+# ============================================================================
+# GitHub Actions Workflow: Zoo Code Config (IaC) Deployment
+# ============================================================================
+# Version: 1.0 | Datum: 2026-05-31
+#
+# Rollt die Zoo Code Provider- & Mode-Konfiguration als Infrastructure as Code
+# auf den Ziel-VPS aus. Wird automatisch bei Änderungen an config/zoo/**
+# oder manuell via workflow_dispatch getriggert.
+#
+# Deployment-Pipeline:
+#   1. Checkout Repository
+#   2. Tailscale OAuth (VPN zum VPS)
+#   3. SSH-Key aus Secrets laden
+#   4. rsync config/zoo/ → VPS
+#   5. API-Keys aus Secrets → /etc/devsystem/llm.env
+#   6. deploy-zoo-config.sh ausführen
+#   7. Validierung: Modes zählen
+# ============================================================================
+
+name: Deploy Zoo Code Config (IaC)
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Ziel-VPS"
+        required: true
+        type: choice
+        options:
+          - qs-vps
+          - prod-vps
+      deployment_mode:
+        description: "Deployment-Modus"
+        required: false
+        type: choice
+        default: "normal"
+        options:
+          - normal
+          - force
+          - dry-run
+  push:
+    branches:
+      - main
+    paths:
+      - "config/zoo/**"
+      - ".github/workflows/deploy-zoo-config.yml"
+
+jobs:
+  deploy-zoo-config:
+    name: "Zoo Config IaC → ${{ github.event.inputs.target || 'qs-vps' }}"
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.target || 'qs-vps' }}
+
+    steps:
+      # -----------------------------------------------------------------------
+      # Step 1: Checkout Repository
+      # -----------------------------------------------------------------------
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # -----------------------------------------------------------------------
+      # Step 2: Setup Tailscale (VPN zum VPS)
+      # -----------------------------------------------------------------------
+      - name: Setup Tailscale
+        uses: tailscale/github-action@v2
+        with:
+          oauth-client-id: ${{ secrets.TAILSCALE_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TAILSCALE_OAUTH_SECRET }}
+          tags: tag:ci
+
+      # -----------------------------------------------------------------------
+      # Step 3: Setup SSH Key
+      # -----------------------------------------------------------------------
+      - name: Setup SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.QS_VPS_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.QS_VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      # -----------------------------------------------------------------------
+      # Step 4: Test SSH Connection
+      # -----------------------------------------------------------------------
+      - name: Test SSH Connection
+        run: |
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no -o ConnectTimeout=10 \
+            ${{ secrets.QS_VPS_USER }}@${{ secrets.QS_VPS_HOST }} \
+            "echo 'SSH_OK' && hostname && uptime"
+
+      # -----------------------------------------------------------------------
+      # Step 5: Sync Zoo Config Files to VPS
+      # -----------------------------------------------------------------------
+      - name: Deploy Zoo Config Files
+        run: |
+          rsync -avz \
+            -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no" \
+            config/zoo/ \
+            ${{ secrets.QS_VPS_USER }}@${{ secrets.QS_VPS_HOST }}:/root/work/DevSystem/config/zoo/
+
+      # -----------------------------------------------------------------------
+      # Step 6: Deploy API Keys to VPS
+      # -----------------------------------------------------------------------
+      - name: Deploy API Keys
+        run: |
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
+            ${{ secrets.QS_VPS_USER }}@${{ secrets.QS_VPS_HOST }} \
+            "sudo mkdir -p /etc/devsystem && \
+             echo 'OPENROUTER_API_KEY=${{ secrets.OPENROUTER_API_KEY }}' | sudo tee /etc/devsystem/llm.env > /dev/null && \
+             echo 'OLLAMA_API_KEY=${{ secrets.OLLAMA_API_KEY }}' | sudo tee -a /etc/devsystem/llm.env > /dev/null && \
+             sudo chmod 600 /etc/devsystem/llm.env && \
+             sudo chown root:root /etc/devsystem/llm.env && \
+             echo '✓ /etc/devsystem/llm.env geschrieben (600, root:root)'"
+
+      # -----------------------------------------------------------------------
+      # Step 7: Run Zoo Config Deployment Script
+      # -----------------------------------------------------------------------
+      - name: Run Zoo Config Deployment
+        run: |
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
+            ${{ secrets.QS_VPS_USER }}@${{ secrets.QS_VPS_HOST }} \
+            "bash /root/work/DevSystem/config/zoo/deploy-zoo-config.sh"
+
+      # -----------------------------------------------------------------------
+      # Step 8: Validate Zoo Modes
+      # -----------------------------------------------------------------------
+      - name: Validate Zoo Modes
+        run: |
+          MODE_COUNT=$(ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
+            ${{ secrets.QS_VPS_USER }}@${{ secrets.QS_VPS_HOST }} \
+            "grep -c 'slug:' ~/.local/share/code-server/User/globalStorage/zoocodeorganization.zoo-code/settings/custom_modes.yaml 2>/dev/null || echo '0'")
+          echo "Deployte Modes: ${MODE_COUNT}"
+          if [ "${MODE_COUNT}" -lt 3 ]; then
+            echo "::warning::Nur ${MODE_COUNT}/3 Modes deployt – erwartet: 3 (ollama-local, hybrid-ollama-openrouter, ollama-cloud-general)"
+          else
+            echo "✅ Alle ${MODE_COUNT} Modes erfolgreich deployt"
+          fi
+
+      # -----------------------------------------------------------------------
+      # Step 9: Cleanup
+      # -----------------------------------------------------------------------
+      - name: Cleanup
+        if: always()
+        run: |
+          rm -f ~/.ssh/id_ed25519
+          rm -f ~/.ssh/known_hosts
+          echo "✓ SSH-Key und known_hosts entfernt"

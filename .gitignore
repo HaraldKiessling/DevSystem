@@ -110,3 +110,16 @@ reports/
 
 # Tailscale Auth Keys (sensibel)
 tailscale-authkey.txt
+
+# LLM API Keys & Secrets (niemals in Git!)
+/etc/devsystem/llm.env
+llm.env
+*.llm.env
+openrouter.key
+ollama.key
+api-keys.txt
+
+# Zoo Code Secrets (niemals in Git!)
+config/zoo/secrets/
+*.secret.yaml
+*.secret.json
